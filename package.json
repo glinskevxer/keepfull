@@ -1,0 +1,30 @@
+{
+  "name": "keepfull",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Delivery forecasting and dispatch for a bulk propane dealer",
+  "license": "UNLICENSED",
+  "author": "glinskevxer <roym78109@gmail.com>",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "20.17.19",
+    "eslint": "9.19.0",
+    "eslint-config-prettier": "10.0.1",
+    "prettier": "3.4.2",
+    "typescript": "5.7.3",
+    "typescript-eslint": "8.22.0",
+    "vitest": "2.1.9"
+  }
+}
