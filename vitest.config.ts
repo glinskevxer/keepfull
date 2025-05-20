@@ -6,5 +6,17 @@ export default defineConfig({
     environment: 'node',
     clearMocks: true,
     restoreMocks: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html', 'lcov'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/index.ts'],
+      thresholds: {
+        lines: 85,
+        statements: 85,
+        functions: 85,
+        branches: 80,
+      },
+    },
   },
 });
