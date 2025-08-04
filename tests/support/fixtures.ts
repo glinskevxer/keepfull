@@ -1,5 +1,7 @@
 import { Customer, CustomerDraft, makeCustomer } from '../../src/model/customer';
+import { Delivery, DeliveryDraft, makeDelivery } from '../../src/model/delivery';
 import { Tank, TankDraft, makeTank } from '../../src/model/tank';
+import { ticketNumber } from '../../src/util/ids';
 
 /** Small builders so a test only has to say what it cares about. */
 
@@ -39,6 +41,30 @@ export function aTank(customerId: string, overrides: Partial<TankDraft> = {}): T
     owner: 'company',
     appliances: ['furnace', 'water_heater'],
     installedOn: '2019-09-20',
+    ...overrides,
+  });
+}
+
+let ticketSerial = 884_100;
+
+export function aDelivery(
+  customerId: string,
+  tankId: string,
+  overrides: Partial<DeliveryDraft> = {},
+): Delivery {
+  ticketSerial += 1;
+  return makeDelivery({
+    id: `d-${ticketSerial}`,
+    ticketNumber: ticketNumber(ticketSerial),
+    customerId,
+    tankId,
+    deliveredOn: '2025-01-14',
+    gross: 312.4,
+    meterTemperature: 42,
+    gaugeBefore: 22,
+    gaugeAfter: 80,
+    driverId: 'drv-3',
+    truckId: 'B-4',
     ...overrides,
   });
 }
