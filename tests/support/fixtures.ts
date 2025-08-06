@@ -1,6 +1,7 @@
 import { Customer, CustomerDraft, makeCustomer } from '../../src/model/customer';
 import { Delivery, DeliveryDraft, makeDelivery } from '../../src/model/delivery';
 import { Tank, TankDraft, makeTank } from '../../src/model/tank';
+import { TankReading, TankReadingDraft, makeReading } from '../../src/model/reading';
 import { ticketNumber } from '../../src/util/ids';
 
 /** Small builders so a test only has to say what it cares about. */
@@ -65,6 +66,20 @@ export function aDelivery(
     gaugeAfter: 80,
     driverId: 'drv-3',
     truckId: 'B-4',
+    ...overrides,
+  });
+}
+
+let readingSerial = 0;
+
+export function aReading(tankId: string, overrides: Partial<TankReadingDraft> = {}): TankReading {
+  readingSerial += 1;
+  return makeReading({
+    id: `r-${readingSerial}`,
+    tankId,
+    takenOn: '2025-01-10',
+    gauge: 42,
+    source: 'driver',
     ...overrides,
   });
 }
