@@ -66,6 +66,17 @@ export class InsufficientHistoryError extends DomainError {
   }
 }
 
+/** Raised when nothing measured or anchored says what the tank is holding. */
+export class NoStartingPointError extends DomainError {
+  constructor(tankId: string) {
+    super(
+      'insufficient_history',
+      `tank ${tankId} has no usable gauge reading and no fill that topped it out`,
+      { tankId },
+    );
+  }
+}
+
 export class OverfillError extends DomainError {
   constructor(tankId: string, requested: number, room: number) {
     super(
