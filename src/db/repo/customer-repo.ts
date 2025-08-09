@@ -2,6 +2,7 @@ import { ConflictError, NotFoundError } from '../../core/errors';
 import { Customer, DeliveryMode, RateClass, makeCustomer } from '../../model/customer';
 import { DayKey } from '../../util/dates';
 import { Db } from '../connection';
+import { WhereClause, limitOf } from '../query';
 
 interface CustomerRow {
   id: string;
@@ -135,41 +136,34 @@ export class CustomerRepository {
   }
 
   list(query: CustomerQuery = {}): Customer[] {
-    const clauses: string[] = [];
-    const params: Record<string, unknown> = {};
-    if (query.deliveryMode) {
-      clauses.push('delivery_mode = @deliveryMode');
-      params.deliveryMode = query.deliveryMode;
-    }
-    if (query.rateClass) {
-      clauses.push('rate_class = @rateClass');
-      params.rateClass = query.rateClass;
-    }
-    if (query.stationId) {
-      clauses.push('station_id = @stationId');
-      params.stationId = query.stationId;
-    }
-    if (query.town) {
-      clauses.push('town = @town');
-      params.town = query.town;
-    }
-    if (query.openOnly) {
-      clauses.push('closed_on IS NULL');
-    }
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-    params.limit = query.limit ?? -1;
-    params.offset = query.offset ?? 0;
+    const where = new WhereClause()
+      .eq('delivery_mode', 'deliveryMode', query.deliveryMode)
+      .eq('rate_class', 'rateClass', query.rateClass)
+      .eq('station_id', 'stationId', query.stationId)
+      .eq('town', 'town', query.town)
+      .when(query.openOnly, 'closed_on IS NULL');
     return this.db
-      .prepare<
-        Record<string, unknown>,
-        CustomerRow
-      >(`SELECT * FROM customers ${where} ORDER BY account_number LIMIT @limit OFFSET @offset`)
-      .all(params)
+      .prepare<Record<string, unknown>, CustomerRow>(
+        `SELECT * FROM customers ${where.sql} ORDER BY account_number LIMIT @limit OFFSET @offset`,
+      )
+      .all(where.bind({ limit: limitOf(query.limit), offset: query.offset ?? 0 }))
       .map(rowToCustomer);
   }
 
   count(query: CustomerQuery = {}): number {
-    return this.list({ ...query, limit: -1, offset: 0 }).length;
+    const where = new WhereClause()
+      .eq('delivery_mode', 'deliveryMode', query.deliveryMode)
+      .eq('rate_class', 'rateClass', query.rateClass)
+      .eq('station_id', 'stationId', query.stationId)
+      .eq('town', 'town', query.town)
+      .when(query.openOnly, 'closed_on IS NULL');
+    const row = this.db
+      .prepare<
+        Record<string, unknown>,
+        { n: number }
+      >(`SELECT count(*) AS n FROM customers ${where.sql}`)
+      .get(where.bind());
+    return row?.n ?? 0;
   }
 
   /** Puts an account on hold, or lifts the hold when the reason is empty. */

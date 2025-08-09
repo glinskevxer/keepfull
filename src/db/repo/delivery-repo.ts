@@ -1,6 +1,7 @@
 import { ConflictError, NotFoundError } from '../../core/errors';
 import { DayKey, dayKey } from '../../util/dates';
 import { Db } from '../connection';
+import { WhereClause, limitOf } from '../query';
 import { Delivery, DeliveryStatus, FillReason } from '../../model/delivery';
 import { Fahrenheit, GrossGallons, NetGallons, Percent } from '../../core/units';
 
@@ -118,43 +119,19 @@ export class DeliveryRepository {
   }
 
   list(query: DeliveryQuery = {}): Delivery[] {
-    const clauses: string[] = [];
-    const params: Record<string, unknown> = {};
-    if (query.tankId) {
-      clauses.push('tank_id = @tankId');
-      params.tankId = query.tankId;
-    }
-    if (query.customerId) {
-      clauses.push('customer_id = @customerId');
-      params.customerId = query.customerId;
-    }
-    if (query.truckId) {
-      clauses.push('truck_id = @truckId');
-      params.truckId = query.truckId;
-    }
-    if (query.driverId) {
-      clauses.push('driver_id = @driverId');
-      params.driverId = query.driverId;
-    }
-    if (query.from) {
-      clauses.push('delivered_on >= @from');
-      params.from = query.from;
-    }
-    if (query.to) {
-      clauses.push('delivered_on <= @to');
-      params.to = query.to;
-    }
-    if (query.postedOnly) {
-      clauses.push("status = 'posted'");
-    }
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-    params.limit = query.limit ?? -1;
+    const where = new WhereClause()
+      .eq('tank_id', 'tankId', query.tankId)
+      .eq('customer_id', 'customerId', query.customerId)
+      .eq('truck_id', 'truckId', query.truckId)
+      .eq('driver_id', 'driverId', query.driverId)
+      .gte('delivered_on', 'from', query.from)
+      .lte('delivered_on', 'to', query.to)
+      .when(query.postedOnly, "status = 'posted'");
     return this.db
-      .prepare<
-        Record<string, unknown>,
-        DeliveryRow
-      >(`SELECT * FROM deliveries ${where} ORDER BY delivered_on, ticket_number LIMIT @limit`)
-      .all(params)
+      .prepare<Record<string, unknown>, DeliveryRow>(
+        `SELECT * FROM deliveries ${where.sql} ORDER BY delivered_on, ticket_number LIMIT @limit`,
+      )
+      .all(where.bind({ limit: limitOf(query.limit) }))
       .map(rowToDelivery);
   }
 

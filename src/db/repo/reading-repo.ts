@@ -1,6 +1,7 @@
 import { ConflictError, NotFoundError } from '../../core/errors';
 import { DayKey, dayKey } from '../../util/dates';
 import { Db } from '../connection';
+import { WhereClause, limitOf } from '../query';
 import { Percent } from '../../core/units';
 import { ReadingSource, TankReading, bestReading } from '../../model/reading';
 
@@ -95,35 +96,17 @@ export class ReadingRepository {
   }
 
   list(query: ReadingQuery = {}): TankReading[] {
-    const clauses: string[] = [];
-    const params: Record<string, unknown> = {};
-    if (query.tankId) {
-      clauses.push('tank_id = @tankId');
-      params.tankId = query.tankId;
-    }
-    if (query.source) {
-      clauses.push('source = @source');
-      params.source = query.source;
-    }
-    if (query.from) {
-      clauses.push('taken_on >= @from');
-      params.from = query.from;
-    }
-    if (query.to) {
-      clauses.push('taken_on <= @to');
-      params.to = query.to;
-    }
-    if (query.measuredOnly) {
-      clauses.push("source <> 'estimated'");
-    }
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-    params.limit = query.limit ?? -1;
+    const where = new WhereClause()
+      .eq('tank_id', 'tankId', query.tankId)
+      .eq('source', 'source', query.source)
+      .gte('taken_on', 'from', query.from)
+      .lte('taken_on', 'to', query.to)
+      .when(query.measuredOnly, "source <> 'estimated'");
     return this.db
-      .prepare<
-        Record<string, unknown>,
-        ReadingRow
-      >(`SELECT * FROM tank_readings ${where} ORDER BY taken_on DESC, source LIMIT @limit`)
-      .all(params)
+      .prepare<Record<string, unknown>, ReadingRow>(
+        `SELECT * FROM tank_readings ${where.sql} ORDER BY taken_on DESC, source LIMIT @limit`,
+      )
+      .all(where.bind({ limit: limitOf(query.limit) }))
       .map(rowToReading);
   }
 

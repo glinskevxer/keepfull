@@ -2,6 +2,7 @@ import { Appliance, Tank, TankOwner, TankSetting, makeTank } from '../../model/t
 import { ConflictError, NotFoundError } from '../../core/errors';
 import { DayKey } from '../../util/dates';
 import { Db } from '../connection';
+import { WhereClause } from '../query';
 
 interface TankRow {
   id: string;
@@ -149,33 +150,18 @@ export class TankRepository {
   }
 
   list(query: TankQuery = {}): Tank[] {
-    const clauses: string[] = [];
-    const params: Record<string, unknown> = {};
-    if (query.customerId) {
-      clauses.push('customer_id = @customerId');
-      params.customerId = query.customerId;
-    }
-    if (query.owner) {
-      clauses.push('owner = @owner');
-      params.owner = query.owner;
-    }
-    if (query.inServiceOnly) {
-      clauses.push('removed_on IS NULL');
-    }
-    if (query.monitoredOnly) {
-      clauses.push('monitor_id IS NOT NULL');
-    }
-    if (query.minimumCapacity !== undefined) {
-      clauses.push('water_capacity >= @minimumCapacity');
-      params.minimumCapacity = query.minimumCapacity;
-    }
-    const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+    const where = new WhereClause()
+      .eq('customer_id', 'customerId', query.customerId)
+      .eq('owner', 'owner', query.owner)
+      .gte('water_capacity', 'minimumCapacity', query.minimumCapacity)
+      .when(query.inServiceOnly, 'removed_on IS NULL')
+      .when(query.monitoredOnly, 'monitor_id IS NOT NULL');
     return this.db
       .prepare<
         Record<string, unknown>,
         TankRow
-      >(`SELECT * FROM tanks ${where} ORDER BY serial_number`)
-      .all(params)
+      >(`SELECT * FROM tanks ${where.sql} ORDER BY serial_number`)
+      .all(where.bind())
       .map(rowToTank);
   }
 
