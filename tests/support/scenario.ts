@@ -33,6 +33,8 @@ export interface Scenario {
   readonly tank: Tank;
   readonly today: DayKey;
   fill(on: string, gallons: number, overrides?: Record<string, unknown>): void;
+  addTank(overrides?: Record<string, unknown>): Tank;
+  fillTank(tankId: string, on: string, gallons: number, overrides?: Record<string, unknown>): void;
   read(on: string, gauge: number, source?: 'monitor' | 'driver' | 'customer'): void;
 }
 
@@ -96,6 +98,23 @@ export function buildScenario(options: ScenarioOptions = {}): Scenario {
     fill(on, gallons, overrides = {}) {
       context.deliveries.insert(
         aDelivery(customer.id, tank.id, {
+          deliveredOn: on,
+          gross: gallons,
+          meterTemperature: 60,
+          gaugeAfter: 80,
+          gaugeBefore: 20,
+          ...overrides,
+        }),
+      );
+    },
+    addTank(overrides = {}) {
+      const extra = aTank(customer.id, overrides as never);
+      context.tanks.insert(extra);
+      return extra;
+    },
+    fillTank(tankId, on, gallons, overrides = {}) {
+      context.deliveries.insert(
+        aDelivery(customer.id, tankId, {
           deliveredOn: on,
           gross: gallons,
           meterTemperature: 60,

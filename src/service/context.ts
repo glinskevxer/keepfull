@@ -2,6 +2,7 @@ import { CustomerRepository } from '../db/repo/customer-repo';
 import { DayKey, today } from '../util/dates';
 import { Db } from '../db/connection';
 import { DeliveryRepository } from '../db/repo/delivery-repo';
+import { FleetRepository } from '../db/repo/fleet-repo';
 import { IdFactory } from '../util/ids';
 import { Logger } from '../util/logger';
 import { ReadingRepository } from '../db/repo/reading-repo';
@@ -21,6 +22,7 @@ export interface AppContext {
   readonly customers: CustomerRepository;
   readonly tanks: TankRepository;
   readonly deliveries: DeliveryRepository;
+  readonly fleet: FleetRepository;
   readonly readings: ReadingRepository;
   readonly weather: WeatherRepository;
   readonly logger: Logger;
@@ -40,6 +42,7 @@ export function buildContext(db: Db, options: ContextOptions = {}): AppContext {
     customers: new CustomerRepository(db),
     tanks: new TankRepository(db),
     deliveries: new DeliveryRepository(db),
+    fleet: new FleetRepository(db),
     readings: new ReadingRepository(db),
     weather: new WeatherRepository(db),
     logger: options.logger ?? new Logger(),

@@ -7,6 +7,7 @@ export * from './core/burn-model';
 export * from './core/degree-days';
 export * from './core/errors';
 export * from './service/context';
+export * from './service/dispatch';
 export * from './service/forecasting';
 export * from './core/fill-intervals';
 export * from './core/forecast';
