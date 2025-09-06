@@ -9,6 +9,7 @@ export * from './core/errors';
 export * from './service/context';
 export * from './service/dispatch';
 export * from './service/forecasting';
+export * from './service/routing';
 export * from './core/fill-intervals';
 export * from './core/forecast';
 export * from './core/tank-math';
