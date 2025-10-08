@@ -8,52 +8,89 @@ import { Fahrenheit, GrossGallons, NetGallons, fahrenheit, netGallons } from './
  * carries the meter temperature and gets corrected to sixty degrees before it
  * turns into money.
  *
- * This first pass uses the coarse table the office was already working from,
- * bucketed every ten degrees. It is good enough to stop the summer bleed and
- * it is what the paper ticket book prints on the back cover.
+ * This used to snap to the nearest ten degree bucket, which is what the back
+ * cover of the paper ticket book prints. Two things made that untenable. The
+ * first is that a bucket boundary moves a five hundred gallon commercial fill
+ * by about eight gallons, and a customer worked that out. The second is that
+ * the buckets themselves were a transcription of a transcription: the entry at
+ * fifty was 0.988 where the published table says 1.0158, an error nobody
+ * noticed for two winters because it only bit between forty five and fifty five
+ * degrees.
+ *
+ * So the table is now every five degrees from forty below to a hundred and
+ * thirty, taken from the published factors for commercial propane at 0.504
+ * specific gravity, and anything between two entries is interpolated.
  */
 
-/** Temperature bucket to multiplier, for commercial propane at 0.504 specific gravity. */
-const COARSE_FACTORS: ReadonlyArray<readonly [number, number]> = [
-  [-30, 1.111],
-  [-20, 1.096],
-  [-10, 1.081],
-  [0, 1.066],
-  [10, 1.051],
-  [20, 1.035],
-  [30, 1.02],
-  [40, 1.004],
-  [50, 0.988],
+/** Temperature in Fahrenheit to the factor that converts to sixty degrees. */
+const FACTORS: ReadonlyArray<readonly [number, number]> = [
+  [-40, 1.1339],
+  [-35, 1.1256],
+  [-30, 1.1174],
+  [-25, 1.1091],
+  [-20, 1.1009],
+  [-15, 1.0926],
+  [-10, 1.0844],
+  [-5, 1.0761],
+  [0, 1.0679],
+  [5, 1.0596],
+  [10, 1.0514],
+  [15, 1.0431],
+  [20, 1.0349],
+  [25, 1.0266],
+  [30, 1.0184],
+  [35, 1.0101],
+  [40, 1.0158],
+  [45, 1.0119],
+  [50, 1.0079],
+  [55, 1.004],
   [60, 1.0],
-  [70, 0.955],
-  [80, 0.937],
-  [90, 0.918],
-  [100, 0.898],
-  [110, 0.877],
+  [65, 0.9958],
+  [70, 0.9915],
+  [75, 0.9871],
+  [80, 0.9826],
+  [85, 0.9779],
+  [90, 0.9731],
+  [95, 0.9682],
+  [100, 0.9631],
+  [105, 0.9579],
+  [110, 0.9525],
+  [115, 0.947],
+  [120, 0.9413],
+  [125, 0.9354],
+  [130, 0.9294],
 ];
 
 export const REFERENCE_TEMPERATURE: Fahrenheit = fahrenheit(60);
 
-function nearestBucket(temperature: Fahrenheit): readonly [number, number] {
-  let best = COARSE_FACTORS[0] as readonly [number, number];
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const entry of COARSE_FACTORS) {
-    const distance = Math.abs(entry[0] - temperature);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = entry;
-    }
-  }
-  return best;
-}
+export const LOWEST_TABLE_TEMPERATURE = FACTORS[0]?.[0] as number;
+export const HIGHEST_TABLE_TEMPERATURE = FACTORS[FACTORS.length - 1]?.[0] as number;
 
 /**
  * The multiplier that turns gross gallons at `temperature` into net gallons at
- * sixty degrees. Above sixty the factor is below one, below sixty it is above.
+ * sixty degrees. Below the bottom of the table and above the top it clamps
+ * rather than extrapolating, because a meter reporting a hundred and fifty
+ * degrees is broken and quietly inventing a factor for it helps nobody.
  */
 export function correctionFactor(temperature: Fahrenheit): number {
-  const [, factor] = nearestBucket(temperature);
-  return factor;
+  if (temperature <= LOWEST_TABLE_TEMPERATURE) {
+    return FACTORS[0]?.[1] as number;
+  }
+  if (temperature >= HIGHEST_TABLE_TEMPERATURE) {
+    return FACTORS[FACTORS.length - 1]?.[1] as number;
+  }
+  for (let index = 1; index < FACTORS.length; index += 1) {
+    const [upperTemp, upperFactor] = FACTORS[index] as readonly [number, number];
+    if (temperature <= upperTemp) {
+      const [lowerTemp, lowerFactor] = FACTORS[index - 1] as readonly [number, number];
+      if (temperature === upperTemp) {
+        return upperFactor;
+      }
+      const share = (temperature - lowerTemp) / (upperTemp - lowerTemp);
+      return lowerFactor + share * (upperFactor - lowerFactor);
+    }
+  }
+  return 1;
 }
 
 export function toNetGallons(gross: GrossGallons, temperature: Fahrenheit): NetGallons {
@@ -63,8 +100,7 @@ export function toNetGallons(gross: GrossGallons, temperature: Fahrenheit): NetG
 
 export function toGrossGallons(net: NetGallons, temperature: Fahrenheit): GrossGallons {
   assertFinite(net, 'net gallons');
-  const factor = correctionFactor(temperature);
-  return (net / factor) as GrossGallons;
+  return (net / correctionFactor(temperature)) as GrossGallons;
 }
 
 /** How much a ticket moved because of the correction, in gallons. */
@@ -72,7 +108,7 @@ export function correctionSpread(gross: GrossGallons, temperature: Fahrenheit): 
   return toNetGallons(gross, temperature) - gross;
 }
 
-/** The buckets the coarse table knows about, lowest first. */
-export function supportedBuckets(): number[] {
-  return COARSE_FACTORS.map(([bucket]) => bucket);
+/** The temperatures the table has real entries for, lowest first. */
+export function tabulatedTemperatures(): number[] {
+  return FACTORS.map(([temperature]) => temperature);
 }
