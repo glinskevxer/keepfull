@@ -5,6 +5,7 @@ import { DeliveryRepository } from '../db/repo/delivery-repo';
 import { FleetRepository } from '../db/repo/fleet-repo';
 import { IdFactory } from '../util/ids';
 import { Logger } from '../util/logger';
+import { PricingRepository } from '../db/repo/pricing-repo';
 import { ReadingRepository } from '../db/repo/reading-repo';
 import { RouteRepository } from '../db/repo/route-repo';
 import { TankRepository } from '../db/repo/tank-repo';
@@ -24,6 +25,7 @@ export interface AppContext {
   readonly tanks: TankRepository;
   readonly deliveries: DeliveryRepository;
   readonly fleet: FleetRepository;
+  readonly pricing: PricingRepository;
   readonly readings: ReadingRepository;
   readonly routes: RouteRepository;
   readonly weather: WeatherRepository;
@@ -45,6 +47,7 @@ export function buildContext(db: Db, options: ContextOptions = {}): AppContext {
     tanks: new TankRepository(db),
     deliveries: new DeliveryRepository(db),
     fleet: new FleetRepository(db),
+    pricing: new PricingRepository(db),
     readings: new ReadingRepository(db),
     routes: new RouteRepository(db),
     weather: new WeatherRepository(db),
