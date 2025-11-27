@@ -18,7 +18,8 @@
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "coverage": "vitest run --coverage",
-    "check": "bash scripts/check.sh"
+    "check": "bash scripts/check.sh",
+    "serve": "node dist/api/main.js"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
