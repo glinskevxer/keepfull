@@ -1,11 +1,16 @@
 import { AppContext } from '../../src/service/context';
 import { FastifyInstance } from 'fastify';
+import { KeyRing, makeKeyRecord } from '../../src/api/auth';
 import { buildServer } from '../../src/api/server';
+
+export const TEST_KEY = 'test-office-key-long-enough-here';
+
+export const testKeyRing = new KeyRing([makeKeyRecord('tests', 'admin', TEST_KEY)]);
 
 const running: FastifyInstance[] = [];
 
 export function testServer(context: AppContext): FastifyInstance {
-  const app = buildServer({ context });
+  const app = buildServer({ context, keyRing: testKeyRing });
   running.push(app);
   return app;
 }
@@ -33,7 +38,11 @@ export async function call<T = unknown>(
     method,
     url,
     ...(payload === undefined ? {} : { payload: payload as object }),
-    headers: { 'content-type': 'application/json', ...headers },
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${TEST_KEY}`,
+      ...headers,
+    },
   });
   const text = response.body;
   return {

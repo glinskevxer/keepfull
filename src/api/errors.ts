@@ -1,6 +1,7 @@
 import { DomainError, ErrorCode, isDomainError } from '../core/errors';
 import { AssertionError } from '../util/assert';
 import { FieldProblem } from './schema';
+import { isValidationError } from './validate';
 
 /**
  * One response shape for every failure.
@@ -42,6 +43,9 @@ export function statusFor(error: unknown): number {
 }
 
 export function bodyFor(error: unknown): ErrorBody {
+  if (isValidationError(error)) {
+    return { code: 'invalid_input', message: error.message, problems: error.problems };
+  }
   if (isDomainError(error)) {
     const domain = error as DomainError;
     return {
