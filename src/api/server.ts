@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import { AppContext } from '../service/context';
 import { bodyFor, statusFor } from './errors';
+import { KeyRing, authenticate } from './auth';
 import { describeError } from '../core/errors';
 import { registerHealthRoutes } from './routes/health';
 
@@ -15,6 +16,8 @@ import { registerHealthRoutes } from './routes/health';
 
 export interface ServerOptions {
   readonly context: AppContext;
+  /** Keys that may reach anything but the health endpoints. */
+  readonly keyRing?: KeyRing;
   /** Turns fastify's own logging on. Off by default because we log our own. */
   readonly requestLogging?: boolean;
   readonly bodyLimitBytes?: number;
@@ -32,11 +35,16 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     request.startedAt = Date.now();
   });
 
+  if (options.keyRing) {
+    app.addHook('onRequest', authenticate(options.keyRing));
+  }
+
   app.addHook('onResponse', async (request, reply) => {
     context.logger.info('handled a request', {
       method: request.method,
       path: request.url,
       status: reply.statusCode,
+      caller: request.caller?.name ?? null,
       ms: Date.now() - (request.startedAt ?? Date.now()),
     });
   });
