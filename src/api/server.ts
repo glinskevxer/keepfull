@@ -5,6 +5,7 @@ import { KeyRing, authenticate } from './auth';
 import { describeError } from '../core/errors';
 import { registerCustomerRoutes } from './routes/customers';
 import { registerHealthRoutes } from './routes/health';
+import { registerTankRoutes } from './routes/tanks';
 
 /**
  * The http server.
@@ -77,6 +78,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
 
   registerHealthRoutes(app, context);
   registerCustomerRoutes(app, context);
+  registerTankRoutes(app, context);
   return app;
 }
 
