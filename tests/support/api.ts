@@ -7,10 +7,13 @@ export const TEST_KEY = 'test-office-key-long-enough-here';
 
 export const testKeyRing = new KeyRing([makeKeyRecord('tests', 'admin', TEST_KEY)]);
 
+/** The plant, so route sequencing has somewhere to start. */
+export const TEST_YARD = { latitude: 42.4432, longitude: -76.5019 };
+
 const running: FastifyInstance[] = [];
 
 export function testServer(context: AppContext): FastifyInstance {
-  const app = buildServer({ context, keyRing: testKeyRing });
+  const app = buildServer({ context, keyRing: testKeyRing, yard: TEST_YARD });
   running.push(app);
   return app;
 }

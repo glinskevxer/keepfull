@@ -24,6 +24,7 @@ function setup() {
   });
   const app = buildServer({
     context,
+    yard: { latitude: 42.4432, longitude: -76.5019 },
     keyRing: new KeyRing([
       makeKeyRecord('office screens', 'office', OFFICE_KEY),
       makeKeyRecord('handhelds', 'driver', DRIVER_KEY),

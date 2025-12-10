@@ -4,6 +4,7 @@ import { bodyFor, statusFor } from './errors';
 import { KeyRing, authenticate } from './auth';
 import { describeError } from '../core/errors';
 import { registerCustomerRoutes } from './routes/customers';
+import { registerDispatchRoutes } from './routes/dispatch';
 import { registerDeliveryRoutes } from './routes/deliveries';
 import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
@@ -22,6 +23,8 @@ export interface ServerOptions {
   readonly context: AppContext;
   /** Keys that may reach anything but the health endpoints. */
   readonly keyRing?: KeyRing;
+  /** Where the trucks start from. Dispatch cannot plan without it. */
+  readonly yard: { latitude: number; longitude: number };
   /** Turns fastify's own logging on. Off by default because we log our own. */
   readonly requestLogging?: boolean;
   readonly bodyLimitBytes?: number;
@@ -83,6 +86,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerTankRoutes(app, context);
   registerDeliveryRoutes(app, context);
   registerForecastRoutes(app, context);
+  registerDispatchRoutes(app, context, options.yard);
   return app;
 }
 
