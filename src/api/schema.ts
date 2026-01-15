@@ -109,6 +109,18 @@ export const observationBatchSchema = z.object({
   observations: z.array(observationSchema).min(1).max(400),
 });
 
+export const normalsSchema = z.object({
+  normals: z
+    .array(
+      z.object({
+        monthDay: z.string().regex(/^\d{2}-\d{2}$/, 'expected MM-DD'),
+        heating: z.number().min(0).max(100),
+      }),
+    )
+    .min(1)
+    .max(366),
+});
+
 export const forecastQuerySchema = z.object({
   asOf: dayString.optional(),
   horizonDays: z.coerce.number().int().min(1).max(365).optional(),

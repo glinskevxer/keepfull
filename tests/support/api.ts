@@ -32,7 +32,7 @@ export interface JsonResponse<T = unknown> {
 /** Fastify can serve a request without a socket, which is all the tests need. */
 export async function call<T = unknown>(
   app: FastifyInstance,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   url: string,
   payload?: unknown,
   headers: Record<string, string> = {},

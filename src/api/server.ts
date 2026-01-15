@@ -9,6 +9,7 @@ import { registerDeliveryRoutes } from './routes/deliveries';
 import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
 import { registerTankRoutes } from './routes/tanks';
+import { registerWeatherRoutes } from './routes/weather';
 
 /**
  * The http server.
@@ -87,6 +88,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerDeliveryRoutes(app, context);
   registerForecastRoutes(app, context);
   registerDispatchRoutes(app, context, options.yard);
+  registerWeatherRoutes(app, context);
   return app;
 }
 
