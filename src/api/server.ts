@@ -6,6 +6,7 @@ import { describeError } from '../core/errors';
 import { registerCustomerRoutes } from './routes/customers';
 import { registerDispatchRoutes } from './routes/dispatch';
 import { registerDeliveryRoutes } from './routes/deliveries';
+import { registerFleetRoutes } from './routes/fleet';
 import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
 import { registerTankRoutes } from './routes/tanks';
@@ -89,6 +90,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerForecastRoutes(app, context);
   registerDispatchRoutes(app, context, options.yard);
   registerWeatherRoutes(app, context);
+  registerFleetRoutes(app, context);
   return app;
 }
 
