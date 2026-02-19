@@ -3,6 +3,7 @@ import { Format, Writer, processWriter } from './output';
 import { Runtime, boot } from '../bootstrap';
 import { Settings, loadSettings } from '../config/env';
 import { describeError, isDomainError } from '../core/errors';
+import { registerDispatchCommands } from './commands/dispatch';
 import { registerForecastCommands } from './commands/forecast';
 import { registerTankCommands } from './commands/tanks';
 
@@ -42,6 +43,7 @@ export function buildProgram(deps: CliDeps): Command {
 
   registerTankCommands(program, deps);
   registerForecastCommands(program, deps);
+  registerDispatchCommands(program, deps);
   return program;
 }
 

@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { CliDeps, globalOptionsOf } from '../program';
 import { Column, emit, gallons, table } from '../output';
 import { ForecastingService } from '../../service/forecasting';
+import { currentDay } from '../../service/context';
 import { dayKey } from '../../util/dates';
 
 /** Forecasting commands. `due` is the one the office runs every morning. */
@@ -42,7 +43,7 @@ export function registerForecastCommands(program: Command, deps: CliDeps): void 
     .action((options: { asOf?: string; window: string }) => {
       const { context } = deps.runtime();
       const service = new ForecastingService(context);
-      const asOf = options.asOf ? dayKey(options.asOf) : undefined;
+      const asOf = options.asOf ? dayKey(options.asOf) : currentDay(context);
       const window = Number(options.window);
       const rows: {
         tankId: string;
@@ -52,17 +53,16 @@ export function registerForecastCommands(program: Command, deps: CliDeps): void 
         fitQuality: number;
       }[] = [];
       for (const tank of context.tanks.list({ inServiceOnly: true })) {
-        const result = service.tryForTank(tank.id, { ...(asOf ? { asOf } : {}) });
+        const result = service.tryForTank(tank.id, { asOf });
         const reserveDay = result?.forecast.reserveDay;
         if (!result || reserveDay === undefined) {
           continue;
         }
-        const today = asOf ?? result.forecast.from;
-        const limit = addDays(today, window);
+        const limit = addDays(asOf, window);
         if (reserveDay > limit) {
           continue;
         }
-        const onDay = result.forecast.days.find((entry) => entry.day === today);
+        const onDay = result.forecast.days.find((entry) => entry.day === asOf);
         rows.push({
           tankId: tank.id,
           account: context.customers.get(tank.customerId).accountNumber,
