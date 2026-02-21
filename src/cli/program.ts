@@ -6,6 +6,7 @@ import { describeError, isDomainError } from '../core/errors';
 import { registerDispatchCommands } from './commands/dispatch';
 import { registerForecastCommands } from './commands/forecast';
 import { registerTankCommands } from './commands/tanks';
+import { registerWeatherCommands } from './commands/weather';
 
 /**
  * The command line the yard actually uses.
@@ -44,6 +45,7 @@ export function buildProgram(deps: CliDeps): Command {
   registerTankCommands(program, deps);
   registerForecastCommands(program, deps);
   registerDispatchCommands(program, deps);
+  registerWeatherCommands(program, deps);
   return program;
 }
 
