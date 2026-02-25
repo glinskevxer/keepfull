@@ -6,6 +6,7 @@ import { describeError, isDomainError } from '../core/errors';
 import { registerAdminCommands } from './commands/admin';
 import { registerDispatchCommands } from './commands/dispatch';
 import { registerForecastCommands } from './commands/forecast';
+import { registerJobCommands } from './commands/jobs';
 import { registerTankCommands } from './commands/tanks';
 import { registerWeatherCommands } from './commands/weather';
 
@@ -48,6 +49,7 @@ export function buildProgram(deps: CliDeps): Command {
   registerDispatchCommands(program, deps);
   registerWeatherCommands(program, deps);
   registerAdminCommands(program, deps);
+  registerJobCommands(program, deps);
   return program;
 }
 
