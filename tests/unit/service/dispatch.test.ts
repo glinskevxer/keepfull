@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { DispatchService } from '../../../src/service/dispatch';
 import { Point } from '../../../src/core/route/distance';
-import { Scenario, buildScenario } from '../../support/scenario';
+import { buildScenario, seedCleanHistory } from '../../support/scenario';
 import { closeTestDatabases } from '../../support/db';
-import { dayKey, daysBetween } from '../../../src/util/dates';
+import { dayKey } from '../../../src/util/dates';
 import { makeTruck } from '../../../src/model/fleet';
 
 afterEach(closeTestDatabases);
@@ -11,21 +11,12 @@ afterEach(closeTestDatabases);
 const yard: Point = { latitude: 42.4432, longitude: -76.5019 };
 
 /** Six clean fills so the tank has a model, burning six gallons a day. */
-function history(scenario: Scenario, tankId: string) {
-  const days = ['2024-08-01', '2024-09-01', '2024-10-01', '2024-11-01', '2024-12-01', '2025-01-01'];
-  scenario.fillTank(tankId, days[0] as string, 180);
-  for (let index = 1; index < days.length; index += 1) {
-    const span = daysBetween(dayKey(days[index - 1] as string), dayKey(days[index] as string));
-    scenario.fillTank(tankId, days[index] as string, 6 * span);
-  }
-}
-
 function withFleet(options: Parameters<typeof buildScenario>[0] = {}) {
   const scenario = buildScenario({ today: '2025-02-10', ...options });
   scenario.context.fleet.saveTruck(
     makeTruck({ id: 'b-4', unitNumber: 'B-4', waterCapacity: 3000 }),
   );
-  history(scenario, scenario.tank.id);
+  seedCleanHistory(scenario);
   return { scenario, dispatch: new DispatchService(scenario.context, yard) };
 }
 

@@ -2,7 +2,7 @@ import { AppContext, currentDay } from '../../service/context';
 import { FastifyInstance } from 'fastify';
 import { ForecastingService, TankForecast } from '../../service/forecasting';
 import { countSkipsByReason, usableShare } from '../../core/fill-intervals';
-import { dayKey } from '../../util/dates';
+import { addDays, dayKey } from '../../util/dates';
 import { forecastQuerySchema } from '../schema';
 import { parseOrThrow } from '../validate';
 import { requireRole } from '../auth';
@@ -118,16 +118,10 @@ export function registerForecastRoutes(app: FastifyInstance, context: AppContext
       }
       if (reserveDay <= asOf) {
         overdue += 1;
-      } else if (reserveDay <= addDaysKey(asOf, 14)) {
+      } else if (reserveDay <= addDays(asOf, 14)) {
         dueInside14 += 1;
       }
     }
     return { asOf, forecast, unforecastable, dueInside14, overdue };
   });
-}
-
-function addDaysKey(day: string, count: number): string {
-  const date = new Date(`${day}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + count);
-  return date.toISOString().slice(0, 10);
 }

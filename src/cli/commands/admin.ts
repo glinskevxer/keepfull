@@ -4,6 +4,7 @@ import { MIGRATIONS } from '../../db/migrations';
 import { appliedMigrations, currentVersion, pendingMigrations } from '../../db/migrate';
 import { compact, integrityCheck, tableNames } from '../../db/connection';
 import { Column, emit, table } from '../output';
+import { addDays, dayKey } from '../../util/dates';
 import { describeSettings } from '../../config/env';
 
 /**
@@ -95,8 +96,9 @@ export function registerAdminCommands(program: Command, deps: CliDeps): void {
     .option('--dry-run', 'count what would go without deleting it', false)
     .action((before: string, options: { dryRun: boolean }) => {
       const { context } = deps.runtime();
-      const doomed = context.readings.list({ to: previousDay(before) }).length;
-      const deleted = options.dryRun ? 0 : context.readings.purgeBefore(before as never);
+      const cutoff = dayKey(before);
+      const doomed = context.readings.list({ to: addDays(cutoff, -1) }).length;
+      const deleted = options.dryRun ? 0 : context.readings.purgeBefore(cutoff);
       emit(
         deps.writer,
         globalOptionsOf(admin).format,
@@ -107,10 +109,4 @@ export function registerAdminCommands(program: Command, deps: CliDeps): void {
             : `deleted ${deleted} readings older than ${before}`,
       );
     });
-}
-
-function previousDay(day: string): never {
-  const date = new Date(`${day}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() - 1);
-  return date.toISOString().slice(0, 10) as never;
 }

@@ -7,7 +7,6 @@ import { dayKey, daysBetween } from '../../../src/util/dates';
 
 afterEach(closeTestDatabases);
 
-/** Six clean fills a month apart, thirty days of twenty degree days each. */
 function withHistory(reservePercent = 25) {
   const scenario = buildScenario({ today: '2025-02-01', reservePercent });
   const days = ['2024-08-01', '2024-09-01', '2024-10-01', '2024-11-01', '2024-12-01', '2025-01-01'];

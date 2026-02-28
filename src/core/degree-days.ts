@@ -1,5 +1,5 @@
 import { assertInRange, assertNonEmpty } from '../util/assert';
-import { DayKey, compareDays, dayKey, daysBetween, monthDay } from '../util/dates';
+import { DayKey, addDays, compareDays, dayKey, daysBetween, monthDay } from '../util/dates';
 import { DegreeDays, Fahrenheit, degreeDays, fahrenheit } from './units';
 
 /**
@@ -108,7 +108,7 @@ export class DegreeDayLedger {
   missing(from: DayKey, to: DayKey): DayKey[] {
     const gaps: DayKey[] = [];
     for (let offset = 0; offset <= daysBetween(from, to); offset += 1) {
-      const day = shift(from, offset);
+      const day = addDays(from, offset);
       if (!this.byDay.has(day)) {
         gaps.push(day);
       }
@@ -123,19 +123,13 @@ export class DegreeDayLedger {
     }
     let total = 0;
     for (let offset = 0; offset <= daysBetween(from, to); offset += 1) {
-      const entry = this.byDay.get(shift(from, offset));
+      const entry = this.byDay.get(addDays(from, offset));
       if (entry) {
         total += entry.heating;
       }
     }
     return degreeDays(total);
   }
-}
-
-function shift(day: DayKey, offset: number): DayKey {
-  const date = new Date(`${day}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + offset);
-  return date.toISOString().slice(0, 10) as DayKey;
 }
 
 /**
@@ -173,7 +167,7 @@ export class NormalYear {
     }
     let total = 0;
     for (let offset = 0; offset <= daysBetween(from, to); offset += 1) {
-      total += this.forDay(shift(from, offset));
+      total += this.forDay(addDays(from, offset));
     }
     return degreeDays(total);
   }

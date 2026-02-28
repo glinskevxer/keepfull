@@ -1,25 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { Scenario, buildScenario } from '../support/scenario';
+import { buildScenario, seedCleanHistory } from '../support/scenario';
 import { cliDeps } from '../support/cli';
 import { closeTestDatabases } from '../support/db';
-import { dayKey, daysBetween } from '../../src/util/dates';
 import { run } from '../../src/cli/program';
 
 afterEach(closeTestDatabases);
 
-function history(scenario: Scenario, tankId: string) {
-  const days = ['2024-08-01', '2024-09-01', '2024-10-01', '2024-11-01', '2024-12-01', '2025-01-01'];
-  scenario.fillTank(tankId, days[0] as string, 180);
-  for (let index = 1; index < days.length; index += 1) {
-    const span = daysBetween(dayKey(days[index - 1] as string), dayKey(days[index] as string));
-    scenario.fillTank(tankId, days[index] as string, 6 * span);
-  }
-}
-
 function setup(options: { withHistory?: boolean } = {}) {
   const scenario = buildScenario({ today: '2025-02-10' });
   if (options.withHistory !== false) {
-    history(scenario, scenario.tank.id);
+    seedCleanHistory(scenario);
   }
   return { scenario, ...cliDeps(scenario) };
 }
@@ -85,7 +75,7 @@ describe('forecast due', () => {
   it('sorts soonest first', async () => {
     const { scenario, deps, writer } = setup();
     const second = scenario.addTank();
-    history(scenario, second.id);
+    seedCleanHistory(scenario, second.id);
     await run(['--json', 'forecast', 'due', '--window', '60'], deps);
     const rows = JSON.parse(writer.text) as { reserveDay: string }[];
     expect(rows).toHaveLength(2);

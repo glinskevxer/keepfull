@@ -1,24 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { DispatchService } from '../../../src/service/dispatch';
 import { RoutingService } from '../../../src/service/routing';
-import { Scenario, buildScenario } from '../../support/scenario';
+import { buildScenario, seedCleanHistory } from '../../support/scenario';
 import { aDelivery } from '../../support/fixtures';
 import { closeTestDatabases } from '../../support/db';
-import { dayKey, daysBetween } from '../../../src/util/dates';
+import { dayKey } from '../../../src/util/dates';
 import { makeDriver, makeTruck } from '../../../src/model/fleet';
 
 afterEach(closeTestDatabases);
 
 const yard = { latitude: 42.4432, longitude: -76.5019 };
-
-function history(scenario: Scenario, tankId: string) {
-  const days = ['2024-08-01', '2024-09-01', '2024-10-01', '2024-11-01', '2024-12-01', '2025-01-01'];
-  scenario.fillTank(tankId, days[0] as string, 180);
-  for (let index = 1; index < days.length; index += 1) {
-    const span = daysBetween(dayKey(days[index - 1] as string), dayKey(days[index] as string));
-    scenario.fillTank(tankId, days[index] as string, 6 * span);
-  }
-}
 
 function setup(driverOverrides: Record<string, unknown> = {}) {
   const scenario = buildScenario({ today: '2025-02-10' });
@@ -34,7 +25,7 @@ function setup(driverOverrides: Record<string, unknown> = {}) {
       ...driverOverrides,
     }),
   );
-  history(scenario, scenario.tank.id);
+  seedCleanHistory(scenario);
   const dispatch = new DispatchService(scenario.context, yard);
   return { scenario, dispatch, routing: new RoutingService(scenario.context) };
 }

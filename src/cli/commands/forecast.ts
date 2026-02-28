@@ -3,7 +3,7 @@ import { CliDeps, globalOptionsOf } from '../program';
 import { Column, emit, gallons, table } from '../output';
 import { ForecastingService } from '../../service/forecasting';
 import { currentDay } from '../../service/context';
-import { dayKey } from '../../util/dates';
+import { addDays, dayKey } from '../../util/dates';
 
 /** Forecasting commands. `due` is the one the office runs every morning. */
 export function registerForecastCommands(program: Command, deps: CliDeps): void {
@@ -81,10 +81,4 @@ export function registerForecastCommands(program: Command, deps: CliDeps): void 
       ];
       emit(deps.writer, globalOptionsOf(forecast).format, rows, () => table(rows, columns));
     });
-}
-
-function addDays(day: string, count: number): string {
-  const date = new Date(`${day}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + count);
-  return date.toISOString().slice(0, 10);
 }

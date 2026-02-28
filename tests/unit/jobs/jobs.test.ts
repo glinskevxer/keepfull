@@ -1,23 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { QuietMonitor, monitorHealth } from '../../../src/jobs/monitor-health';
-import { Scenario, buildScenario } from '../../support/scenario';
+import { Scenario, buildScenario, seedCleanHistory } from '../../support/scenario';
 import { buildJobRegistry } from '../../../src/jobs';
 import { closeTestDatabases } from '../../support/db';
-import { dayKey, daysBetween } from '../../../src/util/dates';
+import { dayKey } from '../../../src/util/dates';
 import { nightlyForecast } from '../../../src/jobs/nightly-forecast';
 import { retention } from '../../../src/jobs/retention';
 import { runJob } from '../../../src/jobs/runner';
 
 afterEach(closeTestDatabases);
-
-function history(scenario: Scenario, tankId: string) {
-  const days = ['2024-08-01', '2024-09-01', '2024-10-01', '2024-11-01', '2024-12-01', '2025-01-01'];
-  scenario.fillTank(tankId, days[0] as string, 180);
-  for (let index = 1; index < days.length; index += 1) {
-    const span = daysBetween(dayKey(days[index - 1] as string), dayKey(days[index] as string));
-    scenario.fillTank(tankId, days[index] as string, 6 * span);
-  }
-}
 
 function jobContext(scenario: Scenario, dryRun = false) {
   return { app: scenario.context, today: scenario.today, dryRun };
@@ -32,7 +23,7 @@ describe('the registry', () => {
 describe('nightly-forecast', () => {
   it('writes estimates for a tank it can forecast', () => {
     const scenario = buildScenario({ today: '2025-02-10' });
-    history(scenario, scenario.tank.id);
+    seedCleanHistory(scenario);
     const result = runJob(nightlyForecast, jobContext(scenario));
     expect(result.changed).toBe(1);
     expect(
@@ -42,7 +33,7 @@ describe('nightly-forecast', () => {
 
   it('skips a tank it cannot forecast and says how many', () => {
     const scenario = buildScenario({ today: '2025-02-10' });
-    history(scenario, scenario.tank.id);
+    seedCleanHistory(scenario);
     scenario.addTank();
     const result = runJob(nightlyForecast, jobContext(scenario));
     expect(result.processed).toBe(2);
@@ -52,21 +43,21 @@ describe('nightly-forecast', () => {
 
   it('skips a will call account', () => {
     const scenario = buildScenario({ today: '2025-02-10' });
-    history(scenario, scenario.tank.id);
+    seedCleanHistory(scenario);
     scenario.context.customers.update({ ...scenario.customer, deliveryMode: 'will_call' });
     expect(runJob(nightlyForecast, jobContext(scenario)).changed).toBe(0);
   });
 
   it('skips a closed account', () => {
     const scenario = buildScenario({ today: '2025-02-10' });
-    history(scenario, scenario.tank.id);
+    seedCleanHistory(scenario);
     scenario.context.customers.close(scenario.customer.id, dayKey('2025-01-01'));
     expect(runJob(nightlyForecast, jobContext(scenario)).changed).toBe(0);
   });
 
   it('writes nothing on a dry run', () => {
     const scenario = buildScenario({ today: '2025-02-10' });
-    history(scenario, scenario.tank.id);
+    seedCleanHistory(scenario);
     const result = runJob(nightlyForecast, jobContext(scenario, true));
     expect(result.changed).toBe(1);
     expect(scenario.context.readings.count({ source: 'estimated' })).toBe(0);
@@ -74,7 +65,7 @@ describe('nightly-forecast', () => {
 
   it('counts how many reach a reserve day', () => {
     const scenario = buildScenario({ today: '2025-02-10' });
-    history(scenario, scenario.tank.id);
+    seedCleanHistory(scenario);
     expect(runJob(nightlyForecast, jobContext(scenario)).detail.withReserveDay).toBe(1);
   });
 });

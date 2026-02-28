@@ -1,6 +1,6 @@
 import { AppContext, buildContext } from '../../src/service/context';
 import { Customer } from '../../src/model/customer';
-import { DayKey, addDays, dayKey, dayRange } from '../../src/util/dates';
+import { DayKey, addDays, dayKey, dayRange, daysBetween } from '../../src/util/dates';
 import { IdFactory } from '../../src/util/ids';
 import { Logger, MemorySink } from '../../src/util/logger';
 import { Station, makeStation } from '../../src/model/station';
@@ -135,4 +135,24 @@ export function buildScenario(options: ScenarioOptions = {}): Scenario {
       });
     },
   };
+}
+
+/**
+ * Six clean fills a month apart, sized so the tank burns six gallons a day
+ * against the scenario's flat twenty degree day weather. Six test files had
+ * grown their own copy of this and two of them had drifted on the fill sizes,
+ * which made the same tank fit two different burn rates depending on which
+ * file you read.
+ */
+export function seedCleanHistory(
+  scenario: Scenario,
+  tankId: string = scenario.tank.id,
+  gallonsPerDay = 6,
+): void {
+  const days = ['2024-08-01', '2024-09-01', '2024-10-01', '2024-11-01', '2024-12-01', '2025-01-01'];
+  scenario.fillTank(tankId, days[0] as string, 180);
+  for (let index = 1; index < days.length; index += 1) {
+    const span = daysBetween(dayKey(days[index - 1] as string), dayKey(days[index] as string));
+    scenario.fillTank(tankId, days[index] as string, gallonsPerDay * span);
+  }
 }
