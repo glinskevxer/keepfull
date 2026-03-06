@@ -11,6 +11,7 @@ import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
 import { registerOfficeRoutes } from './routes/office';
 import { registerReportRoutes } from './routes/reports';
+import { registerSizingRoutes } from './routes/sizing';
 import { registerTankRoutes } from './routes/tanks';
 import { registerWeatherRoutes } from './routes/weather';
 
@@ -95,6 +96,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerFleetRoutes(app, context);
   registerOfficeRoutes(app, context);
   registerReportRoutes(app, context);
+  registerSizingRoutes(app, context);
   return app;
 }
 
