@@ -7,6 +7,7 @@ import { registerAdminCommands } from './commands/admin';
 import { registerDispatchCommands } from './commands/dispatch';
 import { registerForecastCommands } from './commands/forecast';
 import { registerJobCommands } from './commands/jobs';
+import { registerLoadCommands } from './commands/loads';
 import { registerReportCommands } from './commands/reports';
 import { registerSizingCommands } from './commands/sizing';
 import { registerTankCommands } from './commands/tanks';
@@ -54,6 +55,7 @@ export function buildProgram(deps: CliDeps): Command {
   registerJobCommands(program, deps);
   registerReportCommands(program, deps);
   registerSizingCommands(program, deps);
+  registerLoadCommands(program, deps);
   return program;
 }
 

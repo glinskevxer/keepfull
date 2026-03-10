@@ -9,6 +9,7 @@ import { registerDeliveryRoutes } from './routes/deliveries';
 import { registerFleetRoutes } from './routes/fleet';
 import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
+import { registerLoadRoutes } from './routes/loads';
 import { registerOfficeRoutes } from './routes/office';
 import { registerReportRoutes } from './routes/reports';
 import { registerSizingRoutes } from './routes/sizing';
@@ -97,6 +98,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerOfficeRoutes(app, context);
   registerReportRoutes(app, context);
   registerSizingRoutes(app, context);
+  registerLoadRoutes(app, context);
   return app;
 }
 
