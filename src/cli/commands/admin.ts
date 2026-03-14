@@ -1,11 +1,13 @@
 import { Command } from 'commander';
 import { CliDeps, globalOptionsOf } from '../program';
+import { ConflictError } from '../../core/errors';
 import { MIGRATIONS } from '../../db/migrations';
 import { appliedMigrations, currentVersion, pendingMigrations } from '../../db/migrate';
 import { compact, integrityCheck, tableNames } from '../../db/connection';
 import { Column, emit, table } from '../output';
 import { addDays, dayKey } from '../../util/dates';
 import { describeSettings } from '../../config/env';
+import { seed } from '../../dev/seed';
 
 /**
  * Housekeeping. Nothing in here is run often, and two of them are only ever
@@ -73,6 +75,34 @@ export function registerAdminCommands(program: Command, deps: CliDeps): void {
         { header: 'applied at', get: (row) => row.at },
       ];
       emit(deps.writer, globalOptionsOf(admin).format, rows, () => table(rows, columns));
+    });
+
+  admin
+    .command('seed')
+    .description('fill an empty database with a yard that behaves like the real one')
+    .option('--customers <count>', 'how many accounts to make', '40')
+    .option('--seed <number>', 'the generator seed, so a run can be repeated', '20250217')
+    .option('--force', 'seed even though there are already accounts on file', false)
+    .action((options: { customers: string; seed: string; force: boolean }) => {
+      const { context } = deps.runtime();
+      const existing = context.customers.count();
+      if (existing > 0 && !options.force) {
+        throw new ConflictError(
+          `there are already ${existing} accounts on file, pass --force to seed anyway`,
+          { existing },
+        );
+      }
+      const summary = seed(context, {
+        customers: Number(options.customers),
+        seed: Number(options.seed),
+      });
+      emit(deps.writer, globalOptionsOf(admin).format, summary, () =>
+        [
+          `${summary.customers} accounts, ${summary.tanks} tanks`,
+          `${summary.deliveries} tickets, ${summary.observations} observations`,
+          `${summary.stations} stations, ${summary.trucks} trucks`,
+        ].join('\n'),
+      );
     });
 
   admin
