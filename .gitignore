@@ -9,3 +9,5 @@ coverage/
 data/*.db
 data/*.db-journal
 tmp/
+audit.json
+audit-dev.json

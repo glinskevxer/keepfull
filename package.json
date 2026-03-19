@@ -20,7 +20,9 @@
     "coverage": "vitest run --coverage",
     "check": "bash scripts/check.sh",
     "serve": "node dist/api/main.js",
-    "cli": "tsx src/cli/main.ts"
+    "cli": "tsx src/cli/main.ts",
+    "export-check": "bash scripts/export-check.sh",
+    "audit": "npm audit --omit=dev --json > audit.json || true && tsx scripts/audit-dependencies.ts --from-audit audit.json"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
@@ -42,5 +44,9 @@
   },
   "bin": {
     "keepfull": "dist/cli/main.js"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

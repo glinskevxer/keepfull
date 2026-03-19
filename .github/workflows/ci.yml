@@ -14,6 +14,11 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # every job needs these two or the settings parser refuses to boot
+  YARD_LATITUDE: '42.4432'
+  YARD_LONGITUDE: '-76.5019'
+
 jobs:
   checks:
     name: lint, types and format
@@ -31,12 +36,12 @@ jobs:
       - name: types
         run: npm run typecheck
       - name: formatting
-        run: npx prettier --check "src/**/*.ts" "tests/**/*.ts"
+        run: npx prettier --check "src/**/*.ts" "tests/**/*.ts" "scripts/**/*.ts"
 
   test:
     name: tests on node ${{ matrix.node }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +59,7 @@ jobs:
   coverage:
     name: coverage
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -71,3 +76,39 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 7
+
+  build:
+    name: what git would ship
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+          cache: npm
+      - run: npm ci
+      - name: export check
+        run: npm run export-check
+
+  audit:
+    name: dependency advisories
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+          cache: npm
+      - run: npm ci
+      - name: read the advisories against what ships
+        run: npm audit --omit=dev --json > audit.json || true
+      - name: decide about them
+        run: npx tsx scripts/audit-dependencies.ts --from-audit audit.json
+      - name: read the advisories against the toolchain, for information
+        run: npm audit --json > audit-dev.json || true
+      - name: print them
+        run: npx tsx scripts/audit-dependencies.ts --from-audit audit-dev.json --report-only
