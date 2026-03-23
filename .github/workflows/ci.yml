@@ -37,6 +37,8 @@ jobs:
         run: npm run typecheck
       - name: formatting
         run: npx prettier --check "src/**/*.ts" "tests/**/*.ts" "scripts/**/*.ts"
+      - name: the command reference matches the cli
+        run: npm run commands:check
 
   test:
     name: tests on node ${{ matrix.node }}

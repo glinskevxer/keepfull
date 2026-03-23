@@ -22,7 +22,9 @@
     "serve": "node dist/api/main.js",
     "cli": "tsx src/cli/main.ts",
     "export-check": "bash scripts/export-check.sh",
-    "audit": "npm audit --omit=dev --json > audit.json || true && tsx scripts/audit-dependencies.ts --from-audit audit.json"
+    "audit": "npm audit --omit=dev --json > audit.json || true && tsx scripts/audit-dependencies.ts --from-audit audit.json",
+    "commands": "tsx scripts/build-command-reference.ts",
+    "commands:check": "tsx scripts/build-command-reference.ts --check"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",

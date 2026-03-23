@@ -18,6 +18,9 @@ npm run typecheck
 step 'formatting'
 npx prettier --check "src/**/*.ts" "tests/**/*.ts"
 
+step 'the command reference matches the cli'
+npm run commands:check
+
 step 'tests'
 npm test
 
