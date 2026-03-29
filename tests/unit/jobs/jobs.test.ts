@@ -15,8 +15,13 @@ function jobContext(scenario: Scenario, dryRun = false) {
 }
 
 describe('the registry', () => {
-  it('holds the three nightly jobs', () => {
-    expect(buildJobRegistry().names()).toEqual(['monitor-health', 'nightly-forecast', 'retention']);
+  it('holds the nightly jobs and the yearly one', () => {
+    expect(buildJobRegistry().names()).toEqual([
+      'monitor-health',
+      'nightly-forecast',
+      'refresh-normals',
+      'retention',
+    ]);
   });
 });
 
