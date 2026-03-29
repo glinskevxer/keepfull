@@ -166,6 +166,14 @@ plant loads and the daily reconciliation
 | `loads reconcile [options]` | reconcile a day across every truck that loaded |
 | `loads drift [options] <truckId>` | has this truck meter been off the same way for a while |
 
+### `keepfull tickets`
+
+delivery tickets off the handhelds
+
+| command | what it does |
+| --- | --- |
+| `tickets import [options] <file>` | load a csv of tickets, one transaction per row |
+
 <!-- commands:end -->
 
 ## Development

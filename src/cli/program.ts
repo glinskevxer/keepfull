@@ -10,6 +10,7 @@ import { registerJobCommands } from './commands/jobs';
 import { registerLoadCommands } from './commands/loads';
 import { registerReportCommands } from './commands/reports';
 import { registerSizingCommands } from './commands/sizing';
+import { registerTicketImportCommands } from './commands/import-tickets';
 import { registerTankCommands } from './commands/tanks';
 import { registerWeatherCommands } from './commands/weather';
 
@@ -56,6 +57,7 @@ export function buildProgram(deps: CliDeps): Command {
   registerReportCommands(program, deps);
   registerSizingCommands(program, deps);
   registerLoadCommands(program, deps);
+  registerTicketImportCommands(program, deps);
   return program;
 }
 
