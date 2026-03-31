@@ -174,6 +174,15 @@ delivery tickets off the handhelds
 | --- | --- |
 | `tickets import [options] <file>` | load a csv of tickets, one transaction per row |
 
+### `keepfull readings`
+
+tank monitor telemetry
+
+| command | what it does |
+| --- | --- |
+| `readings import [options] <file>` | load the monitor vendor daily export |
+| `readings unmatched [options]` | tanks that carry a monitor which has never reported |
+
 <!-- commands:end -->
 
 ## Development
