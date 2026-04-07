@@ -36,7 +36,7 @@ describe('readings import', () => {
     const path = fileWith('monitor,day,percent\nWT-4471,2026-01-13,41.5\n');
     const result = await run(['readings', 'import', path], deps);
     expect(result.code).toBe(0);
-    expect(writer.text).toMatch(/1 rows read, 1 matched a tank, 1 written/);
+    expect(writer.text).toMatch(/1 rows read, 1 usable, 1 written/);
     expect(scenario.context.readings.latestFor(monitored.id)?.gauge).toBe(41.5);
   });
 

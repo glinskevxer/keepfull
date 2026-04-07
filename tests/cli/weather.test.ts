@@ -68,9 +68,9 @@ describe('weather import', () => {
     );
     await run(['weather', 'import', 'KITH', path], deps);
     expect(writer.text).toMatch(/4 rows read, 1 usable, 1 written/);
-    expect(writer.text).toMatch(/line 3: /);
-    expect(writer.text).toMatch(/line 4: low 28 is above high 9/);
-    expect(writer.text).toMatch(/line 5: high and low both have to be numbers/);
+    expect(writer.text).toMatch(/line 3 day not-a-day: /);
+    expect(writer.text).toMatch(/line 4 day 2026-01-13: .*low 28 is above high 9/);
+    expect(writer.text).toMatch(/line 5 day 2026-01-14: .*high and low both have to be numbers/);
   });
 
   it('is idempotent over the same file', async () => {

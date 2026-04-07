@@ -1,12 +1,11 @@
 import { Command } from 'commander';
 import { CliDeps, globalOptionsOf } from '../program';
+import { DeliveryDraft, FillReason } from '../../model/delivery';
 import { DeliveryService } from '../../service/deliveries';
-import { FillReason } from '../../model/delivery';
 import { emit } from '../output';
 import { dayKey } from '../../util/dates';
-import { describeError } from '../../core/errors';
-import { optionalColumn, parseCsvTable, requireColumn } from '../../util/csv';
-import { readFileSync } from 'node:fs';
+import { item, problemLines, runImport, skipRow, summaryLine } from '../import-runner';
+import { optionalColumn, requireColumn } from '../../util/csv';
 
 /**
  * Loads a shift of tickets out of the file the handhelds dump.
@@ -16,27 +15,10 @@ import { readFileSync } from 'node:fs';
  * the path everybody actually uses because the driver plugs the unit in when
  * they get back rather than sitting in the yard waiting for wifi.
  *
- * Every row is its own transaction. A shift where one ticket is unpostable has
- * to load the other eleven, because the alternative is a driver keying twelve
+ * Every row is posted on its own. A shift where one ticket is unpostable has to
+ * load the other eleven, because the alternative is a driver keying twelve
  * tickets in by hand at half past six.
  */
-
-export interface TicketImportProblem {
-  readonly line: number;
-  readonly ticketNumber: string;
-  readonly reason: string;
-}
-
-export interface TicketImportSummary {
-  readonly file: string;
-  readonly read: number;
-  readonly posted: number;
-  readonly skipped: number;
-  readonly problems: TicketImportProblem[];
-  readonly flagged: { ticketNumber: string; flags: string[] }[];
-  readonly dryRun: boolean;
-}
-
 export function registerTicketImportCommands(program: Command, deps: CliDeps): void {
   const tickets = program.command('tickets').description('delivery tickets off the handhelds');
 
@@ -47,17 +29,14 @@ export function registerTicketImportCommands(program: Command, deps: CliDeps): v
     .action((file: string, options: { dryRun: boolean }) => {
       const { context } = deps.runtime();
       const service = new DeliveryService(context);
-      const parsed = parseCsvTable(readFileSync(file, 'utf8'));
-      const problems: TicketImportProblem[] = [];
       const flagged: { ticketNumber: string; flags: string[] }[] = [];
-      let posted = 0;
-      let skipped = 0;
 
-      parsed.rows.forEach((row, index) => {
-        const line = index + 2;
-        const ticketNumber = row.ticket ?? '(no ticket number)';
-        try {
-          const draft = {
+      const outcome = runImport<DeliveryDraft>({
+        file,
+        dryRun: options.dryRun,
+        subjectOf: (row) => `ticket ${row.ticket ?? '(none)'}`,
+        readRow(row) {
+          const draft: DeliveryDraft = {
             id: context.ids.next('dlv'),
             ticketNumber: requireColumn(row, 'ticket'),
             customerId: requireColumn(row, 'customer'),
@@ -77,49 +56,29 @@ export function registerTicketImportCommands(program: Command, deps: CliDeps): v
           if (!Number.isFinite(draft.gross) || !Number.isFinite(draft.meterTemperature)) {
             throw new Error('gross and temperature both have to be numbers');
           }
-          if (context.deliveries.findByTicketNumber(draft.ticketNumber)) {
-            skipped += 1;
-            return;
-          }
-          if (options.dryRun) {
-            posted += 1;
-            return;
-          }
+          // A driver plugging the handheld in twice is normal, so a ticket
+          // already on file is passed over rather than being a problem.
+          return context.deliveries.findByTicketNumber(draft.ticketNumber) ? skipRow : item(draft);
+        },
+        writeOne(draft) {
           const result = service.post(draft);
-          posted += 1;
           if (result.flags.length > 0) {
             flagged.push({ ticketNumber: result.delivery.ticketNumber, flags: result.flags });
           }
-        } catch (error) {
-          problems.push({ line, ticketNumber, reason: describeError(error) });
-        }
+        },
       });
 
-      const summary: TicketImportSummary = {
-        file,
-        read: parsed.rows.length,
-        posted,
-        skipped,
-        problems,
-        flagged,
-        dryRun: options.dryRun,
-      };
       context.logger.info('imported tickets', {
         file,
-        read: summary.read,
-        posted: summary.posted,
-        problems: summary.problems.length,
+        read: outcome.read,
+        posted: outcome.written,
+        problems: outcome.problems.length,
       });
-      emit(deps.writer, globalOptionsOf(tickets).format, summary, () =>
+      emit(deps.writer, globalOptionsOf(tickets).format, { ...outcome, flagged }, () =>
         [
-          `${summary.read} rows read, ${summary.posted} posted, ${summary.skipped} already on file` +
-            (options.dryRun ? ' (dry run)' : ''),
-          ...summary.flagged.map(
-            (entry) => `  flagged ${entry.ticketNumber}: ${entry.flags.join(', ')}`,
-          ),
-          ...summary.problems.map(
-            (problem) => `  line ${problem.line} ticket ${problem.ticketNumber}: ${problem.reason}`,
-          ),
+          summaryLine(outcome),
+          ...flagged.map((entry) => `  flagged ${entry.ticketNumber}: ${entry.flags.join(', ')}`),
+          ...problemLines(outcome),
         ].join('\n'),
       );
     });

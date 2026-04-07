@@ -63,7 +63,7 @@ describe('tickets import', () => {
     const path = fileWith(`${HEADER}\n${row(scenario, 700_001)}\n`);
     const result = await run(['tickets', 'import', path], deps);
     expect(result.code).toBe(0);
-    expect(writer.text).toMatch(/1 rows read, 1 posted, 0 already on file/);
+    expect(writer.text).toMatch(/1 rows read, 1 usable, 1 written/);
     expect(scenario.context.deliveries.list()).toHaveLength(1);
   });
 
@@ -87,7 +87,7 @@ describe('tickets import', () => {
       ].join('\n'),
     );
     await run(['tickets', 'import', path], deps);
-    expect(writer.text).toMatch(/3 rows read, 1 posted/);
+    expect(writer.text).toMatch(/3 rows read, 2 usable, 1 written/);
     expect(writer.text).toMatch(/line 3 ticket \d+: not_found/);
     expect(writer.text).toMatch(/line 4 ticket \d+: .*have to be numbers/);
     expect(scenario.context.deliveries.list()).toHaveLength(1);
@@ -98,7 +98,7 @@ describe('tickets import', () => {
     const path = fileWith(`${HEADER}\n${row(scenario, 700_006)}\n`);
     await run(['tickets', 'import', path], deps);
     await run(['tickets', 'import', path], deps);
-    expect(writer.text).toMatch(/1 rows read, 0 posted, 1 already on file/);
+    expect(writer.text).toMatch(/1 rows read, 0 usable, 1 already on file, 0 written/);
     expect(scenario.context.deliveries.list()).toHaveLength(1);
   });
 

@@ -2,10 +2,9 @@ import { Command } from 'commander';
 import { CliDeps, globalOptionsOf } from '../program';
 import { TankReading, makeReading } from '../../model/reading';
 import { dayKey } from '../../util/dates';
-import { describeError } from '../../core/errors';
 import { emit } from '../output';
-import { optionalColumn, parseCsvTable, requireColumn } from '../../util/csv';
-import { readFileSync } from 'node:fs';
+import { ignoreRow, item, problemLines, runImport, summaryLine } from '../import-runner';
+import { optionalColumn, requireColumn } from '../../util/csv';
 
 /**
  * Loads the tank monitor vendor's daily export.
@@ -17,16 +16,6 @@ import { readFileSync } from 'node:fs';
  * moved and nobody told us. Both are worth a phone call and neither shows up
  * anywhere else.
  */
-
-export interface ReadingImportSummary {
-  readonly file: string;
-  readonly read: number;
-  readonly written: number;
-  readonly unknownMonitors: string[];
-  readonly problems: { line: number; monitorId: string; reason: string }[];
-  readonly dryRun: boolean;
-}
-
 export function registerReadingImportCommands(program: Command, deps: CliDeps): void {
   const readings = program.command('readings').description('tank monitor telemetry');
 
@@ -36,73 +25,59 @@ export function registerReadingImportCommands(program: Command, deps: CliDeps): 
     .option('--dry-run', 'read and check without writing anything', false)
     .action((file: string, options: { dryRun: boolean }) => {
       const { context } = deps.runtime();
-      const parsed = parseCsvTable(readFileSync(file, 'utf8'));
       const unknown = new Set<string>();
-      const problems: { line: number; monitorId: string; reason: string }[] = [];
-      const batch: TankReading[] = [];
 
-      parsed.rows.forEach((row, index) => {
-        const line = index + 2;
-        const monitorId = row.monitor ?? '(no monitor)';
-        try {
-          const id = requireColumn(row, 'monitor');
-          const tank = context.tanks.findByMonitor(id);
+      const outcome = runImport<TankReading>({
+        file,
+        dryRun: options.dryRun,
+        subjectOf: (row) => `monitor ${row.monitor ?? '(none)'}`,
+        readRow(row) {
+          const monitorId = requireColumn(row, 'monitor');
+          const tank = context.tanks.findByMonitor(monitorId);
           if (!tank) {
-            unknown.add(id);
-            return;
+            unknown.add(monitorId);
+            return ignoreRow;
           }
           const gauge = Number(requireColumn(row, 'percent'));
           if (!Number.isFinite(gauge)) {
             throw new Error('percent has to be a number');
           }
-          batch.push(
+          return item(
             makeReading({
               id: context.ids.next('rdg'),
               tankId: tank.id,
               takenOn: dayKey(requireColumn(row, 'day')),
               gauge,
               source: 'monitor',
-              monitorId: id,
+              monitorId,
               ...(optionalColumn(row, 'note') ? { note: row.note as string } : {}),
             }),
           );
-        } catch (error) {
-          problems.push({ line, monitorId, reason: describeError(error) });
-        }
+        },
+        write: (batch) => context.readings.recordMany(batch),
       });
 
-      const written = options.dryRun ? 0 : context.readings.recordMany(batch);
-      const summary: ReadingImportSummary = {
-        file,
-        read: parsed.rows.length,
-        written,
-        unknownMonitors: [...unknown].sort(),
-        problems,
-        dryRun: options.dryRun,
-      };
-      if (summary.unknownMonitors.length > 0) {
+      const unknownMonitors = [...unknown].sort();
+      if (unknownMonitors.length > 0) {
         context.logger.warn('the monitor export named monitors we do not have', {
-          count: summary.unknownMonitors.length,
-          first: summary.unknownMonitors[0] ?? null,
+          count: unknownMonitors.length,
+          first: unknownMonitors[0] ?? null,
         });
       }
       context.logger.info('imported monitor readings', {
         file,
-        read: summary.read,
-        written: summary.written,
+        read: outcome.read,
+        written: outcome.written,
       });
-      emit(deps.writer, globalOptionsOf(readings).format, summary, () =>
+      emit(deps.writer, globalOptionsOf(readings).format, { ...outcome, unknownMonitors }, () =>
         [
-          `${summary.read} rows read, ${batch.length} matched a tank, ${summary.written} written` +
-            (options.dryRun ? ' (dry run)' : ''),
-          summary.unknownMonitors.length === 0
+          summaryLine(outcome),
+          unknownMonitors.length === 0
             ? 'every monitor matched a tank'
-            : `${summary.unknownMonitors.length} monitors matched nothing: ` +
-              `${summary.unknownMonitors.slice(0, 8).join(', ')}` +
-              (summary.unknownMonitors.length > 8 ? ' ...' : ''),
-          ...summary.problems.map(
-            (problem) => `  line ${problem.line} monitor ${problem.monitorId}: ${problem.reason}`,
-          ),
+            : `${unknownMonitors.length} monitors matched nothing: ` +
+              `${unknownMonitors.slice(0, 8).join(', ')}` +
+              (unknownMonitors.length > 8 ? ' ...' : ''),
+          ...problemLines(outcome),
         ].join('\n'),
       );
     });

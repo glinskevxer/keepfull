@@ -3,9 +3,10 @@ import { CliDeps, globalOptionsOf } from '../program';
 import { Column, emit, table } from '../output';
 import { addDays, dayKey } from '../../util/dates';
 import { currentDay } from '../../service/context';
-import { parseCsvTable, requireColumn } from '../../util/csv';
+import { item, problemLines, runImport, summaryLine } from '../import-runner';
+import { requireColumn } from '../../util/csv';
+import { DailyTemperature } from '../../core/degree-days';
 import { fahrenheit } from '../../core/units';
-import { readFileSync } from 'node:fs';
 
 /**
  * Weather from the terminal, including the import the nightly pull uses.
@@ -49,12 +50,13 @@ export function registerWeatherCommands(program: Command, deps: CliDeps): void {
     .action((stationId: string, file: string, options: { dryRun: boolean }) => {
       const { context } = deps.runtime();
       context.weather.getStation(stationId);
-      const parsed = parseCsvTable(readFileSync(file, 'utf8'));
-      const problems: string[] = [];
-      const rows: { day: string; high: number; low: number }[] = [];
-      parsed.rows.forEach((row, index) => {
-        const line = index + 2;
-        try {
+      const at = context.clock();
+
+      const outcome = runImport<DailyTemperature>({
+        file,
+        dryRun: options.dryRun,
+        subjectOf: (row) => `day ${row.day ?? '(none)'}`,
+        readRow(row) {
           const day = dayKey(requireColumn(row, 'day'));
           const high = Number(requireColumn(row, 'high'));
           const low = Number(requireColumn(row, 'low'));
@@ -64,39 +66,18 @@ export function registerWeatherCommands(program: Command, deps: CliDeps): void {
           if (low > high) {
             throw new Error(`low ${low} is above high ${high}`);
           }
-          rows.push({ day, high, low });
-        } catch (error) {
-          problems.push(`line ${line}: ${(error as Error).message}`);
-        }
+          return item({ day, high: fahrenheit(high), low: fahrenheit(low) });
+        },
+        write(observations) {
+          for (const observation of observations) {
+            context.weather.recordObservation(stationId, observation, at);
+          }
+          return observations.length;
+        },
       });
 
-      let written = 0;
-      if (!options.dryRun) {
-        const at = context.clock();
-        for (const row of rows) {
-          context.weather.recordObservation(
-            stationId,
-            { day: dayKey(row.day), high: fahrenheit(row.high), low: fahrenheit(row.low) },
-            at,
-          );
-          written += 1;
-        }
-      }
-      const summary = {
-        stationId,
-        file,
-        read: parsed.rows.length,
-        usable: rows.length,
-        written,
-        problems,
-        dryRun: options.dryRun,
-      };
-      emit(deps.writer, globalOptionsOf(weather).format, summary, () =>
-        [
-          `${summary.read} rows read, ${summary.usable} usable, ${summary.written} written` +
-            (options.dryRun ? ' (dry run)' : ''),
-          ...problems.map((problem) => `  ${problem}`),
-        ].join('\n'),
+      emit(deps.writer, globalOptionsOf(weather).format, { stationId, ...outcome }, () =>
+        [summaryLine(outcome), ...problemLines(outcome)].join('\n'),
       );
     });
 
