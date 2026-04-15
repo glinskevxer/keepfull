@@ -1,3 +1,4 @@
+import { BudgetRepository } from '../db/repo/budget-repo';
 import { CustomerRepository } from '../db/repo/customer-repo';
 import { DayKey, today } from '../util/dates';
 import { Db } from '../db/connection';
@@ -22,6 +23,7 @@ import { WeatherRepository } from '../db/repo/weather-repo';
  */
 export interface AppContext {
   readonly db: Db;
+  readonly budgets: BudgetRepository;
   readonly customers: CustomerRepository;
   readonly tanks: TankRepository;
   readonly deliveries: DeliveryRepository;
@@ -45,6 +47,7 @@ export interface ContextOptions {
 export function buildContext(db: Db, options: ContextOptions = {}): AppContext {
   return {
     db,
+    budgets: new BudgetRepository(db),
     customers: new CustomerRepository(db),
     tanks: new TankRepository(db),
     deliveries: new DeliveryRepository(db),
