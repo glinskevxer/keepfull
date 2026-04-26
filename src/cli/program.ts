@@ -4,6 +4,7 @@ import { Runtime, boot } from '../bootstrap';
 import { Settings, loadSettings } from '../config/env';
 import { describeError, isDomainError } from '../core/errors';
 import { registerAdminCommands } from './commands/admin';
+import { registerBudgetCommands } from './commands/budgets';
 import { registerDispatchCommands } from './commands/dispatch';
 import { registerForecastCommands } from './commands/forecast';
 import { registerJobCommands } from './commands/jobs';
@@ -60,6 +61,7 @@ export function buildProgram(deps: CliDeps): Command {
   registerLoadCommands(program, deps);
   registerTicketImportCommands(program, deps);
   registerReadingImportCommands(program, deps);
+  registerBudgetCommands(program, deps);
   return program;
 }
 

@@ -183,6 +183,18 @@ tank monitor telemetry
 | `readings import [options] <file>` | load the monitor vendor daily export |
 | `readings unmatched [options]` | tanks that carry a monitor which has never reported |
 
+### `keepfull budgets`
+
+levelised payment plans
+
+| command | what it does |
+| --- | --- |
+| `budgets open [options] <customerId>` | open a plan for an account |
+| `budgets show [options] <planId>` | a plan and how it is tracking |
+| `budgets pay [options] <planId> <number> <amount>` | record a payment against an instalment |
+| `budgets settle [options] <planId>` | close a plan out against what was actually burned |
+| `budgets at-risk [options]` | open plans heading for a settlement nobody expects |
+
 <!-- commands:end -->
 
 ## Development

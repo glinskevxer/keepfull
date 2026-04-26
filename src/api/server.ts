@@ -3,6 +3,7 @@ import { AppContext } from '../service/context';
 import { bodyFor, statusFor } from './errors';
 import { KeyRing, authenticate } from './auth';
 import { describeError } from '../core/errors';
+import { registerBudgetRoutes } from './routes/budgets';
 import { registerCustomerRoutes } from './routes/customers';
 import { registerDispatchRoutes } from './routes/dispatch';
 import { registerDeliveryRoutes } from './routes/deliveries';
@@ -99,6 +100,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerReportRoutes(app, context);
   registerSizingRoutes(app, context);
   registerLoadRoutes(app, context);
+  registerBudgetRoutes(app, context);
   return app;
 }
 
