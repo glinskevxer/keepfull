@@ -28,6 +28,7 @@ const envSchema = z.object({
   DISPATCH_WINDOW_DAYS: z.coerce.number().int().min(0).max(60).default(5),
   TAX_PERCENT: z.coerce.number().min(0).max(30).default(0),
   API_KEYS: z.string().default(''),
+  REQUESTS_PER_MINUTE: z.coerce.number().int().min(1).max(100_000).optional(),
   REQUEST_LOGGING: z
     .enum(['true', 'false'])
     .default('false')
@@ -45,6 +46,7 @@ export interface Settings {
   readonly dispatchWindowDays: number;
   readonly taxPercent: number;
   readonly keyRing: KeyRing;
+  readonly requestsPerMinute?: number;
   readonly requestLogging: boolean;
 }
 
@@ -102,6 +104,9 @@ export function loadSettings(env: NodeJS.ProcessEnv = process.env): Settings {
     dispatchWindowDays: values.DISPATCH_WINDOW_DAYS,
     taxPercent: values.TAX_PERCENT,
     keyRing: new KeyRing(keys),
+    ...(values.REQUESTS_PER_MINUTE === undefined
+      ? {}
+      : { requestsPerMinute: values.REQUESTS_PER_MINUTE }),
     requestLogging: values.REQUEST_LOGGING,
   };
 }
@@ -117,5 +122,6 @@ export function describeSettings(settings: Settings): Record<string, unknown> {
     yard: settings.yard,
     dispatchWindowDays: settings.dispatchWindowDays,
     apiKeys: settings.keyRing.size,
+    requestsPerMinute: settings.requestsPerMinute ?? null,
   };
 }

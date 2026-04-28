@@ -24,6 +24,9 @@ export async function main(): Promise<void> {
     keyRing: settings.keyRing,
     yard: settings.yard,
     requestLogging: settings.requestLogging,
+    ...(settings.requestsPerMinute === undefined
+      ? {}
+      : { requestsPerMinute: settings.requestsPerMinute }),
   });
 
   let closing = false;

@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import { AppContext } from '../service/context';
 import { bodyFor, statusFor } from './errors';
 import { KeyRing, authenticate } from './auth';
+import { RateLimiter, rateLimit } from './rate-limit';
 import { describeError } from '../core/errors';
 import { registerBudgetRoutes } from './routes/budgets';
 import { registerCustomerRoutes } from './routes/customers';
@@ -32,6 +33,8 @@ export interface ServerOptions {
   readonly keyRing?: KeyRing;
   /** Where the trucks start from. Dispatch cannot plan without it. */
   readonly yard: { latitude: number; longitude: number };
+  /** Requests one caller may make a minute. Off when absent. */
+  readonly requestsPerMinute?: number;
   /** Turns fastify's own logging on. Off by default because we log our own. */
   readonly requestLogging?: boolean;
   readonly bodyLimitBytes?: number;
@@ -51,6 +54,18 @@ export function buildServer(options: ServerOptions): FastifyInstance {
 
   if (options.keyRing) {
     app.addHook('onRequest', authenticate(options.keyRing));
+  }
+
+  if (options.requestsPerMinute !== undefined) {
+    const limiter = new RateLimiter({ limit: options.requestsPerMinute, windowMs: 60_000 });
+    app.addHook('onRequest', rateLimit(limiter));
+    // Sweeping on an interval rather than on every request keeps the hot path
+    // free of it. The handle is unrefed so it never holds the process open.
+    const sweep = setInterval(() => limiter.sweep(), 60_000);
+    sweep.unref();
+    app.addHook('onClose', async () => {
+      clearInterval(sweep);
+    });
   }
 
   app.addHook('onResponse', async (request, reply) => {
