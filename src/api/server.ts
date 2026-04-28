@@ -3,6 +3,7 @@ import { AppContext } from '../service/context';
 import { bodyFor, statusFor } from './errors';
 import { KeyRing, authenticate } from './auth';
 import { RateLimiter, rateLimit } from './rate-limit';
+import { requestId } from './request-id';
 import { describeError } from '../core/errors';
 import { registerBudgetRoutes } from './routes/budgets';
 import { registerCustomerRoutes } from './routes/customers';
@@ -48,6 +49,8 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     disableRequestLogging: true,
   });
 
+  app.addHook('onRequest', requestId(context.ids));
+
   app.addHook('onRequest', async (request) => {
     request.startedAt = Date.now();
   });
@@ -70,6 +73,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
 
   app.addHook('onResponse', async (request, reply) => {
     context.logger.info('handled a request', {
+      requestId: request.requestId ?? null,
       method: request.method,
       path: request.url,
       status: reply.statusCode,
@@ -82,6 +86,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     reply.code(404).send({
       code: 'not_found',
       message: `nothing at ${request.method} ${request.url}`,
+      ...(request.requestId ? { detail: { requestId: request.requestId } } : {}),
     });
   });
 
@@ -89,6 +94,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     const status = statusFor(error);
     if (status >= 500) {
       context.logger.error('request failed', {
+        requestId: request.requestId ?? null,
         method: request.method,
         path: request.url,
         error: describeError(error),
@@ -100,7 +106,14 @@ export function buildServer(options: ServerOptions): FastifyInstance {
       reply.code(error.statusCode).send({ code: 'invalid_input', message: error.message });
       return;
     }
-    reply.code(status).send(bodyFor(error));
+    const body = bodyFor(error);
+    reply
+      .code(status)
+      .send(
+        request.requestId
+          ? { ...body, detail: { ...(body.detail ?? {}), requestId: request.requestId } }
+          : body,
+      );
   });
 
   registerHealthRoutes(app, context);
