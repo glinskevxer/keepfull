@@ -9,6 +9,7 @@ import { registerBudgetRoutes } from './routes/budgets';
 import { registerCustomerRoutes } from './routes/customers';
 import { registerDispatchRoutes } from './routes/dispatch';
 import { registerDeliveryRoutes } from './routes/deliveries';
+import { registerExceptionRoutes } from './routes/exceptions';
 import { registerFleetRoutes } from './routes/fleet';
 import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
@@ -129,6 +130,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerSizingRoutes(app, context);
   registerLoadRoutes(app, context);
   registerBudgetRoutes(app, context);
+  registerExceptionRoutes(app, context);
   return app;
 }
 

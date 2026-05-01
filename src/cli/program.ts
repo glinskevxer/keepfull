@@ -6,6 +6,7 @@ import { describeError, isDomainError } from '../core/errors';
 import { registerAdminCommands } from './commands/admin';
 import { registerBudgetCommands } from './commands/budgets';
 import { registerDispatchCommands } from './commands/dispatch';
+import { registerExceptionCommands } from './commands/exceptions';
 import { registerForecastCommands } from './commands/forecast';
 import { registerJobCommands } from './commands/jobs';
 import { registerLoadCommands } from './commands/loads';
@@ -62,6 +63,7 @@ export function buildProgram(deps: CliDeps): Command {
   registerTicketImportCommands(program, deps);
   registerReadingImportCommands(program, deps);
   registerBudgetCommands(program, deps);
+  registerExceptionCommands(program, deps);
   return program;
 }
 

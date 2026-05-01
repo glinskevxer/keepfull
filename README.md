@@ -195,6 +195,10 @@ levelised payment plans
 | `budgets settle [options] <planId>` | close a plan out against what was actually burned |
 | `budgets at-risk [options]` | open plans heading for a settlement nobody expects |
 
+### `keepfull exceptions`
+
+everything that needs looking at, worst first
+
 <!-- commands:end -->
 
 ## Development
