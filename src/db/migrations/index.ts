@@ -1,5 +1,6 @@
 import { Migration } from '../migrate';
 import { migration as accountsAndTanks } from './0001-accounts-and-tanks';
+import { migration as audit } from './0009-audit';
 import { migration as budgetPlans } from './0008-budget-plans';
 import { migration as deliveriesAndReadings } from './0003-deliveries-and-readings';
 import { migration as fleet } from './0004-fleet';
@@ -18,4 +19,5 @@ export const MIGRATIONS: readonly Migration[] = [
   pricing,
   truckLoads,
   budgetPlans,
+  audit,
 ];

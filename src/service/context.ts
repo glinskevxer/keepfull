@@ -1,3 +1,4 @@
+import { AuditRepository } from '../db/repo/audit-repo';
 import { BudgetRepository } from '../db/repo/budget-repo';
 import { CustomerRepository } from '../db/repo/customer-repo';
 import { DayKey, today } from '../util/dates';
@@ -23,6 +24,7 @@ import { WeatherRepository } from '../db/repo/weather-repo';
  */
 export interface AppContext {
   readonly db: Db;
+  readonly audit: AuditRepository;
   readonly budgets: BudgetRepository;
   readonly customers: CustomerRepository;
   readonly tanks: TankRepository;
@@ -47,6 +49,7 @@ export interface ContextOptions {
 export function buildContext(db: Db, options: ContextOptions = {}): AppContext {
   return {
     db,
+    audit: new AuditRepository(db),
     budgets: new BudgetRepository(db),
     customers: new CustomerRepository(db),
     tanks: new TankRepository(db),
