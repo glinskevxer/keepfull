@@ -1,0 +1,15 @@
+node_modules
+dist
+coverage
+tests
+.git
+.github
+*.md
+!README.md
+data
+tmp
+audit.json
+audit-dev.json
+.env
+.env.*
+!.env.example

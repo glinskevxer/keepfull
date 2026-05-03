@@ -47,6 +47,21 @@ npm run cli -- forecast due --window 7
 npm run cli -- dispatch plan --window 5
 ```
 
+## In a container
+
+```
+docker build -t keepfull .
+docker run -d --name keepfull \
+  -p 8080:8080 \
+  -v keepfull-data:/var/lib/keepfull \
+  --env-file .env \
+  keepfull
+```
+
+The database lives on the volume, not in the image. A container that writes its
+data into its own layer loses it on the next deploy, and this yard has already
+paid for that lesson once with a different tool.
+
 ## Layout
 
 | directory | what is in it |

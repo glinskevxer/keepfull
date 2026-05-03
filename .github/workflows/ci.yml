@@ -95,6 +95,38 @@ jobs:
       - name: export check
         run: npm run export-check
 
+  image:
+    name: the container builds and comes up healthy
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: build the image
+        run: docker build -t keepfull:ci .
+      - name: start it
+        run: |
+          docker run -d --name keepfull-ci -p 8080:8080 \
+            -e YARD_LATITUDE=42.4432 -e YARD_LONGITUDE=-76.5019 \
+            -e API_KEYS=ci:admin:ci-key-that-is-long-enough-here \
+            keepfull:ci
+      - name: wait for it to say it is ready
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/ready > /dev/null; then
+              echo "ready after $attempt attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "never came up" >&2
+          docker logs keepfull-ci >&2
+          exit 1
+      - name: the health probe inside the container agrees
+        run: docker exec keepfull-ci node dist/health-probe.js
+      - name: stop it
+        if: always()
+        run: docker rm -f keepfull-ci || true
+
   audit:
     name: dependency advisories
     runs-on: ubuntu-latest
