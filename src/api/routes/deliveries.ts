@@ -46,21 +46,29 @@ export function registerDeliveryRoutes(app: FastifyInstance, context: AppContext
     { preHandler: requireRole('office', 'driver') },
     async (request, reply) => {
       const body = parseOrThrow(postDeliverySchema, request.body);
-      const posted = deliveries.post({
-        id: context.ids.next('dlv'),
-        ticketNumber: body.ticketNumber,
-        customerId: body.customerId,
-        tankId: body.tankId,
-        deliveredOn: body.deliveredOn,
-        gross: body.gross,
-        meterTemperature: body.meterTemperature,
-        ...(body.gaugeBefore === undefined ? {} : { gaugeBefore: body.gaugeBefore }),
-        ...(body.gaugeAfter === undefined ? {} : { gaugeAfter: body.gaugeAfter }),
-        ...(body.reason ? { reason: body.reason as FillReason } : {}),
-        driverId: body.driverId,
-        truckId: body.truckId,
-        ...(body.notes ? { notes: body.notes } : {}),
-      });
+      const who = {
+        actor: request.caller?.name ?? 'unknown',
+        ...(request.requestId ? { requestId: request.requestId } : {}),
+      };
+      const posted = deliveries.post(
+        {
+          id: context.ids.next('dlv'),
+          ticketNumber: body.ticketNumber,
+          customerId: body.customerId,
+          tankId: body.tankId,
+          deliveredOn: body.deliveredOn,
+          gross: body.gross,
+          meterTemperature: body.meterTemperature,
+          ...(body.gaugeBefore === undefined ? {} : { gaugeBefore: body.gaugeBefore }),
+          ...(body.gaugeAfter === undefined ? {} : { gaugeAfter: body.gaugeAfter }),
+          ...(body.reason ? { reason: body.reason as FillReason } : {}),
+          driverId: body.driverId,
+          truckId: body.truckId,
+          ...(body.notes ? { notes: body.notes } : {}),
+        },
+        {},
+        who,
+      );
       reply.code(201);
       return { delivery: present(posted.delivery), flags: posted.flags };
     },
@@ -118,7 +126,11 @@ export function registerDeliveryRoutes(app: FastifyInstance, context: AppContext
     { preHandler: requireRole('office') },
     async (request) => {
       const note = request.body?.note ?? 'voided from the office';
-      return { delivery: present(deliveries.void(request.params.id, note)) };
+      const who = {
+        actor: request.caller?.name ?? 'unknown',
+        ...(request.requestId ? { requestId: request.requestId } : {}),
+      };
+      return { delivery: present(deliveries.void(request.params.id, note, who)) };
     },
   );
 

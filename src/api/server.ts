@@ -5,6 +5,7 @@ import { KeyRing, authenticate } from './auth';
 import { RateLimiter, rateLimit } from './rate-limit';
 import { requestId } from './request-id';
 import { describeError } from '../core/errors';
+import { registerAuditRoutes } from './routes/audit';
 import { registerBudgetRoutes } from './routes/budgets';
 import { registerCustomerRoutes } from './routes/customers';
 import { registerDispatchRoutes } from './routes/dispatch';
@@ -131,6 +132,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   registerLoadRoutes(app, context);
   registerBudgetRoutes(app, context);
   registerExceptionRoutes(app, context);
+  registerAuditRoutes(app, context);
   return app;
 }
 

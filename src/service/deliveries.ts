@@ -8,6 +8,7 @@ import {
   impliedNetGallons,
   makeDelivery,
 } from '../model/delivery';
+import { AuditContext, AuditService, SYSTEM_ACTOR } from './audit';
 import { assertFits } from '../core/drop-sizing';
 import { inTransaction } from '../db/connection';
 import { isOutOfGas } from '../core/tank-math';
@@ -45,9 +46,17 @@ export interface PostOptions {
 }
 
 export class DeliveryService {
-  constructor(private readonly context: AppContext) {}
+  private readonly audit: AuditService;
 
-  post(draft: DeliveryDraft, options: PostOptions = {}): PostedTicket {
+  constructor(private readonly context: AppContext) {
+    this.audit = new AuditService(context);
+  }
+
+  post(
+    draft: DeliveryDraft,
+    options: PostOptions = {},
+    who: AuditContext = { actor: SYSTEM_ACTOR },
+  ): PostedTicket {
     const tank = this.context.tanks.get(draft.tankId);
     const customer = this.context.customers.get(draft.customerId);
     if (tank.customerId !== customer.id) {
@@ -99,6 +108,18 @@ export class DeliveryService {
       }
     });
 
+    this.audit.record(who, {
+      action: 'post',
+      subjectKind: 'delivery',
+      subjectId: delivery.id,
+      after: {
+        ticketNumber: delivery.ticketNumber,
+        tankId: delivery.tankId,
+        net: delivery.net,
+        deliveredOn: delivery.deliveredOn,
+      },
+      ...(flags.length > 0 ? { note: flags.join(', ') } : {}),
+    });
     this.context.logger.info('posted a ticket', {
       ticketNumber: delivery.ticketNumber,
       tankId: tank.id,
@@ -163,14 +184,17 @@ export class DeliveryService {
     }
   }
 
-  void(deliveryId: string, note: string): Delivery {
+  void(deliveryId: string, note: string, who: AuditContext = { actor: SYSTEM_ACTOR }): Delivery {
     const delivery = this.context.deliveries.get(deliveryId);
     this.context.deliveries.void(deliveryId, note);
+    const after = this.context.deliveries.get(deliveryId);
+    this.audit.recordChange(who, 'void', 'delivery', deliveryId, delivery, after, note);
     this.context.logger.warn('voided a ticket', {
       ticketNumber: delivery.ticketNumber,
+      actor: who.actor,
       note,
     });
-    return this.context.deliveries.get(deliveryId);
+    return after;
   }
 
   /** Records the gauge a customer read over the phone. */
