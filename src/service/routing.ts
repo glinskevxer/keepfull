@@ -1,6 +1,7 @@
 import { AppContext } from './context';
 import { ConflictError, NotFoundError } from '../core/errors';
-import { DayKey, addDays } from '../util/dates';
+import { DayKey } from '../util/dates';
+import { DeliveryCalendar, defaultCalendar } from '../core/calendar';
 import { DispatchPlan } from './dispatch';
 import { Route, RouteStop, isEditable, makeRoute } from '../model/route';
 import { canHaulPropane } from '../model/fleet';
@@ -26,10 +27,15 @@ export interface CommitOptions {
 }
 
 export class RoutingService {
-  constructor(private readonly context: AppContext) {}
+  constructor(
+    private readonly context: AppContext,
+    private readonly calendar: DeliveryCalendar = defaultCalendar(),
+  ) {}
 
   commit(plan: DispatchPlan, options: CommitOptions = {}): Route[] {
-    const runOn = options.runOn ?? addDays(plan.day, 1);
+    // The next day the trucks actually run, which over a weekend or a holiday
+    // is not simply tomorrow.
+    const runOn = options.runOn ?? this.calendar.nextRunningDay(plan.day);
     const drivers = options.drivers ?? {};
     const committed: Route[] = [];
 
@@ -95,6 +101,12 @@ export class RoutingService {
     if (!canHaulPropane(driver, route.runOn)) {
       throw new ConflictError(`${driver.name} cannot haul on ${route.runOn}`, {
         driverId: assigned,
+        runOn: route.runOn,
+      });
+    }
+    if (!this.calendar.runs(route.runOn)) {
+      throw new ConflictError(`the trucks do not run on ${route.runOn}`, {
+        routeId,
         runOn: route.runOn,
       });
     }

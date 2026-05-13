@@ -1,5 +1,6 @@
 import { AppContext, currentDay } from './context';
 import { CandidateStop, LoadPlan, TruckCapacity, planLoads } from '../core/route/loadplan';
+import { DeliveryCalendar, defaultCalendar } from '../core/calendar';
 import { DayKey, addDays, daysBetween } from '../util/dates';
 import { ForecastingService, TankForecast } from './forecasting';
 import { Point } from '../core/route/distance';
@@ -36,6 +37,8 @@ export interface DispatchCandidate {
   readonly stop: CandidateStop;
   readonly forecast: TankForecast;
   readonly reserveDay?: DayKey;
+  /** The last day a truck can go, once the shutdowns are taken out. */
+  readonly serveBy?: DayKey;
 }
 
 export interface DispatchOptions {
@@ -57,12 +60,15 @@ export interface DispatchPlan {
 
 export class DispatchService {
   private readonly forecasting: ForecastingService;
+  private readonly calendar: DeliveryCalendar;
 
   constructor(
     private readonly context: AppContext,
     private readonly yard: Point,
+    calendar: DeliveryCalendar = defaultCalendar(),
   ) {
     this.forecasting = new ForecastingService(context);
+    this.calendar = calendar;
   }
 
   /** Every tank that should be on a truck inside the window, with its drop sized. */
@@ -111,17 +117,23 @@ export class DispatchService {
         skipped.push({ tankId: tank.id, reason: 'drop_too_small' });
         continue;
       }
+      // A tank whose reserve day falls on a closed day has to be served before
+      // the shutdown, so the urgency is measured against the last running day
+      // rather than against the reserve day itself. Over a christmas that moves
+      // a tank forward by three days, which is the whole point.
+      const serveBy = this.calendar.serveBy(reserveDay);
       candidates.push({
         stop: {
           id: tank.id,
           tankId: tank.id,
           point: { latitude: customer.address.latitude, longitude: customer.address.longitude },
           gallons: drop.gallons,
-          urgency: daysBetween(asOf, reserveDay),
-          ...(reserveDay <= asOf ? { overdue: true } : {}),
+          urgency: daysBetween(asOf, serveBy),
+          ...(serveBy <= asOf ? { overdue: true } : {}),
         },
         forecast,
         reserveDay,
+        serveBy,
       });
     }
     return { candidates, skipped };
