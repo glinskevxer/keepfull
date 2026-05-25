@@ -214,6 +214,16 @@ levelised payment plans
 
 everything that needs looking at, worst first
 
+### `keepfull prices`
+
+the posted price and moving it
+
+| command | what it does |
+| --- | --- |
+| `prices schedules [options]` | what is in force and what is coming |
+| `prices raise [options] <amount>` | put an amount on every tier |
+| `prices cut [options] <amount>` | take an amount off every tier |
+
 <!-- commands:end -->
 
 ## Development
