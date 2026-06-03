@@ -3,6 +3,7 @@ import { AppContext } from '../service/context';
 import { bodyFor, statusFor } from './errors';
 import { KeyRing, authenticate } from './auth';
 import { RateLimiter, rateLimit } from './rate-limit';
+import { Registry, buildRegistry } from '../util/metrics';
 import { requestId } from './request-id';
 import { describeError } from '../core/errors';
 import { registerAuditRoutes } from './routes/audit';
@@ -14,6 +15,7 @@ import { registerExceptionRoutes } from './routes/exceptions';
 import { registerFleetRoutes } from './routes/fleet';
 import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
+import { registerMetricsRoutes } from './routes/metrics';
 import { registerLoadRoutes } from './routes/loads';
 import { registerOfficeRoutes } from './routes/office';
 import { registerReportRoutes } from './routes/reports';
@@ -38,6 +40,8 @@ export interface ServerOptions {
   readonly yard: { latitude: number; longitude: number };
   /** Requests one caller may make a minute. Off when absent. */
   readonly requestsPerMinute?: number;
+  /** Somewhere to put the counters. One is built if none is given. */
+  readonly registry?: Registry;
   /** Turns fastify's own logging on. Off by default because we log our own. */
   readonly requestLogging?: boolean;
   readonly bodyLimitBytes?: number;
@@ -45,6 +49,7 @@ export interface ServerOptions {
 
 export function buildServer(options: ServerOptions): FastifyInstance {
   const { context } = options;
+  const registry = options.registry ?? buildRegistry();
   const app = Fastify({
     logger: options.requestLogging ?? false,
     bodyLimit: options.bodyLimitBytes ?? 1_048_576,
@@ -74,13 +79,23 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   }
 
   app.addHook('onResponse', async (request, reply) => {
+    const ms = Date.now() - (request.startedAt ?? Date.now());
+    // The route pattern, not the url, so a thousand tank ids do not become a
+    // thousand label values.
+    const route = request.routeOptions?.url ?? 'unmatched';
+    registry.increment('keepfull_requests_total', {
+      method: request.method,
+      route,
+      status: String(reply.statusCode),
+    });
+    registry.observe('keepfull_request_duration_ms', ms, { route });
     context.logger.info('handled a request', {
       requestId: request.requestId ?? null,
       method: request.method,
       path: request.url,
       status: reply.statusCode,
       caller: request.caller?.name ?? null,
-      ms: Date.now() - (request.startedAt ?? Date.now()),
+      ms,
     });
   });
 
@@ -119,6 +134,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   });
 
   registerHealthRoutes(app, context);
+  registerMetricsRoutes(app, context, registry);
   registerCustomerRoutes(app, context);
   registerTankRoutes(app, context);
   registerDeliveryRoutes(app, context);

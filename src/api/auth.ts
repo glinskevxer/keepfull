@@ -89,8 +89,12 @@ export function readKey(request: FastifyRequest): string | undefined {
   return typeof direct === 'string' ? direct : undefined;
 }
 
-/** Paths anybody may reach, because the balancer has no key. */
-const OPEN_PATHS = new Set(['/health', '/ready']);
+/**
+ * Paths anybody may reach: the balancer has no key, and neither does the
+ * scraper. Every monitoring setup here that has carried a credential has
+ * eventually had it expire quietly and the alerting go dark with it.
+ */
+const OPEN_PATHS = new Set(['/health', '/ready', '/metrics']);
 
 export function authenticate(keyRing: KeyRing) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {

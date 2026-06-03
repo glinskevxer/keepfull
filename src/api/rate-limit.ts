@@ -99,7 +99,7 @@ export function rateLimitKey(request: FastifyRequest): string {
 }
 
 export function rateLimit(limiter: RateLimiter, options: { exempt?: readonly string[] } = {}) {
-  const exempt = new Set(options.exempt ?? ['/health', '/ready']);
+  const exempt = new Set(options.exempt ?? ['/health', '/ready', '/metrics']);
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const path = request.url.split('?')[0] ?? request.url;
     if (exempt.has(path)) {
