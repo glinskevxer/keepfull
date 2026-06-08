@@ -47,6 +47,31 @@ export function appliedMigrations(db: Db): AppliedMigration[] {
     .map((row) => ({ version: row.version, name: row.name, appliedAt: row.applied_at }));
 }
 
+/**
+ * The applied version without creating anything, so it can be asked of a
+ * read only connection. `currentVersion` creates the ledger table if it is
+ * missing, which is right on the live database and wrong on a backup opened
+ * read only to be checked.
+ */
+export function readVersion(db: Db): number {
+  const table = db
+    .prepare<
+      [],
+      { name: string }
+    >("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'")
+    .get();
+  if (!table) {
+    return 0;
+  }
+  const row = db
+    .prepare<
+      [],
+      { version: number | null }
+    >('SELECT max(version) AS version FROM schema_migrations')
+    .get();
+  return row?.version ?? 0;
+}
+
 export function currentVersion(db: Db): number {
   const applied = appliedMigrations(db);
   return applied.length === 0 ? 0 : (applied[applied.length - 1] as AppliedMigration).version;

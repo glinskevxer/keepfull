@@ -7,6 +7,7 @@ import { compact, integrityCheck, tableNames } from '../../db/connection';
 import { Column, emit, table } from '../output';
 import { addDays, dayKey } from '../../util/dates';
 import { describeSettings } from '../../config/env';
+import { backup, verify } from '../../db/backup';
 import { seed } from '../../dev/seed';
 
 /**
@@ -103,6 +104,45 @@ export function registerAdminCommands(program: Command, deps: CliDeps): void {
           `${summary.stations} stations, ${summary.trucks} trucks`,
         ].join('\n'),
       );
+    });
+
+  admin
+    .command('backup <path>')
+    .description('take a copy through sqlite own backup, then open it and check it')
+    .action(async (path: string) => {
+      const { db } = deps.runtime();
+      const result = await backup(db, path);
+      const checked = verify(path);
+      emit(deps.writer, globalOptionsOf(admin).format, { ...result, verified: checked }, () =>
+        [
+          `wrote ${path}, ${(result.bytes / 1024 / 1024).toFixed(1)} MB in ${result.durationMs}ms`,
+          `schema version ${result.schemaVersion}, ${result.tables} tables, integrity ${result.integrity}`,
+          checked.ok
+            ? 'the copy opens and reads clean'
+            : `PROBLEMS: ${checked.problems.join('; ')}`,
+        ].join('\n'),
+      );
+      if (!checked.ok) {
+        process.exitCode = 1;
+      }
+    });
+
+  admin
+    .command('verify-backup <path>')
+    .description('open a copy and say whether it is worth having')
+    .action((path: string) => {
+      const result = verify(path);
+      emit(deps.writer, globalOptionsOf(admin).format, result, () =>
+        [
+          `${path}: ${result.ok ? 'usable' : 'NOT usable'}`,
+          `integrity ${result.integrity}, schema version ${result.schemaVersion}`,
+          ...Object.entries(result.counts).map(([table, count]) => `  ${table}: ${count}`),
+          ...result.problems.map((problem) => `  ${problem}`),
+        ].join('\n'),
+      );
+      if (!result.ok) {
+        process.exitCode = 1;
+      }
     });
 
   admin

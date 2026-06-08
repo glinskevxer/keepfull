@@ -137,6 +137,8 @@ database and configuration housekeeping
 | `admin status [options]` | what this process is pointed at and what shape it is in |
 | `admin migrations [options]` | what has been applied and what has not |
 | `admin seed [options]` | fill an empty database with a yard that behaves like the real one |
+| `admin backup [options] <path>` | take a copy through sqlite own backup, then open it and check it |
+| `admin verify-backup [options] <path>` | open a copy and say whether it is worth having |
 | `admin compact [options]` | reclaim space and refresh the query planner statistics |
 | `admin purge-readings [options] <before>` | drop gauge readings older than a day |
 

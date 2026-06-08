@@ -15,6 +15,7 @@ import {
   isUpToDate,
   migrate,
   pendingMigrations,
+  readVersion,
 } from '../../../src/db/migrate';
 import { MIGRATIONS } from '../../../src/db/migrations';
 import { MemorySink, Logger } from '../../../src/util/logger';
@@ -162,6 +163,14 @@ describe('migrate', () => {
 describe('version reporting', () => {
   it('starts at zero', () => {
     expect(currentVersion(db())).toBe(0);
+  });
+
+  it('reads the version without creating the ledger', () => {
+    const connection = db();
+    expect(readVersion(connection)).toBe(0);
+    expect(tableNames(connection)).not.toContain('schema_migrations');
+    migrate(connection, [fake(1, 'a'), fake(2, 'b')]);
+    expect(readVersion(connection)).toBe(2);
   });
 
   it('knows what is still pending', () => {
