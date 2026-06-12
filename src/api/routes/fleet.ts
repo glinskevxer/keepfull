@@ -12,6 +12,7 @@ import {
 } from '../../model/fleet';
 import { FastifyInstance } from 'fastify';
 import { dayKey } from '../../util/dates';
+import { defined, flag, optionalText } from '../query-params';
 import { requireRole } from '../auth';
 
 /**
@@ -61,10 +62,12 @@ export function registerFleetRoutes(app: FastifyInstance, context: AppContext): 
       const on = currentDay(context);
       return {
         trucks: context.fleet
-          .listTrucks({
-            ...(request.query.activeOnly === 'true' ? { activeOnly: true } : {}),
-            ...(request.query.kind ? { kind: request.query.kind as TruckKind } : {}),
-          })
+          .listTrucks(
+            defined({
+              activeOnly: flag(request.query.activeOnly),
+              kind: optionalText(request.query.kind) as TruckKind | undefined,
+            }),
+          )
           .map((truck) => presentTruck(truck, on)),
       };
     },
@@ -124,7 +127,7 @@ export function registerFleetRoutes(app: FastifyInstance, context: AppContext): 
       const on = currentDay(context);
       return {
         drivers: context.fleet
-          .listDrivers(request.query.activeOnly === 'true' ? { activeOnly: true } : {})
+          .listDrivers(defined({ activeOnly: flag(request.query.activeOnly) }))
           .map((driver) => presentDriver(driver, on)),
       };
     },

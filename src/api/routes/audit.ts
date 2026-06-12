@@ -2,7 +2,7 @@ import { AppContext } from '../../service/context';
 import { AuditService } from '../../service/audit';
 import { FastifyInstance } from 'fastify';
 import { SubjectKind } from '../../db/repo/audit-repo';
-import { dayKey } from '../../util/dates';
+import { defined, optionalDay, optionalNumber, optionalText } from '../query-params';
 import { requireRole } from '../auth';
 
 /**
@@ -25,17 +25,17 @@ export function registerAuditRoutes(app: FastifyInstance, context: AppContext): 
       limit?: string;
     };
   }>('/audit', { preHandler: requireRole('office') }, async (request) => ({
-    entries: context.audit.list({
-      ...(request.query.subjectKind
-        ? { subjectKind: request.query.subjectKind as SubjectKind }
-        : {}),
-      ...(request.query.subjectId ? { subjectId: request.query.subjectId } : {}),
-      ...(request.query.actor ? { actor: request.query.actor } : {}),
-      ...(request.query.action ? { action: request.query.action } : {}),
-      ...(request.query.from ? { from: dayKey(request.query.from) } : {}),
-      ...(request.query.to ? { to: dayKey(request.query.to) } : {}),
-      ...(request.query.limit ? { limit: Number(request.query.limit) } : {}),
-    }),
+    entries: context.audit.list(
+      defined({
+        subjectKind: optionalText(request.query.subjectKind) as SubjectKind | undefined,
+        subjectId: optionalText(request.query.subjectId),
+        actor: optionalText(request.query.actor),
+        action: optionalText(request.query.action),
+        from: optionalDay(request.query.from),
+        to: optionalDay(request.query.to),
+        limit: optionalNumber(request.query.limit),
+      }),
+    ),
   }));
 
   app.get<{ Params: { kind: string; id: string } }>(

@@ -2,6 +2,7 @@ import { AppContext, currentDay } from '../../service/context';
 import { FastifyInstance } from 'fastify';
 import { ReconciliationService } from '../../service/reconciliation';
 import { addDays, dayKey } from '../../util/dates';
+import { defined, flag, optionalDay, optionalText } from '../query-params';
 import { makeTruckLoad } from '../../model/truck-load';
 import { requireRole } from '../auth';
 
@@ -55,12 +56,14 @@ export function registerLoadRoutes(app: FastifyInstance, context: AppContext): v
     '/loads',
     { preHandler: requireRole('office', 'job') },
     async (request) => ({
-      loads: context.loads.list({
-        ...(request.query.truckId ? { truckId: request.query.truckId } : {}),
-        ...(request.query.from ? { from: dayKey(request.query.from) } : {}),
-        ...(request.query.to ? { to: dayKey(request.query.to) } : {}),
-        ...(request.query.openOnly === 'true' ? { openOnly: true } : {}),
-      }),
+      loads: context.loads.list(
+        defined({
+          truckId: optionalText(request.query.truckId),
+          from: optionalDay(request.query.from),
+          to: optionalDay(request.query.to),
+          openOnly: flag(request.query.openOnly),
+        }),
+      ),
     }),
   );
 

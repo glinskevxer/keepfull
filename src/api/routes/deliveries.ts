@@ -3,7 +3,7 @@ import { Delivery, FillReason } from '../../model/delivery';
 import { DeliveryService } from '../../service/deliveries';
 import { FastifyInstance } from 'fastify';
 import { PricingService } from '../../service/pricing';
-import { dayKey } from '../../util/dates';
+import { defined, flag, optionalDay, optionalNumber, optionalText } from '../query-params';
 import { parseOrThrow } from '../validate';
 import { postDeliverySchema } from '../schema';
 import { requireRole } from '../auth';
@@ -86,15 +86,17 @@ export function registerDeliveryRoutes(app: FastifyInstance, context: AppContext
     };
   }>('/deliveries', { preHandler: requireRole('office', 'job') }, async (request) => {
     const query = request.query;
-    const rows = context.deliveries.list({
-      ...(query.tankId ? { tankId: query.tankId } : {}),
-      ...(query.customerId ? { customerId: query.customerId } : {}),
-      ...(query.truckId ? { truckId: query.truckId } : {}),
-      ...(query.from ? { from: dayKey(query.from) } : {}),
-      ...(query.to ? { to: dayKey(query.to) } : {}),
-      ...(query.postedOnly === 'true' ? { postedOnly: true } : {}),
-      limit: query.limit ? Number(query.limit) : 200,
-    });
+    const rows = context.deliveries.list(
+      defined({
+        tankId: optionalText(query.tankId),
+        customerId: optionalText(query.customerId),
+        truckId: optionalText(query.truckId),
+        from: optionalDay(query.from),
+        to: optionalDay(query.to),
+        postedOnly: flag(query.postedOnly),
+        limit: optionalNumber(query.limit) ?? 200,
+      }),
+    );
     return { deliveries: rows.map(present) };
   });
 
@@ -113,9 +115,7 @@ export function registerDeliveryRoutes(app: FastifyInstance, context: AppContext
         customerId: delivery.customerId,
         gallons: delivery.net,
         on: delivery.deliveredOn,
-        ...(request.query.taxPercent === undefined
-          ? {}
-          : { taxPercent: Number(request.query.taxPercent) }),
+        ...defined({ taxPercent: optionalNumber(request.query.taxPercent) }),
       });
       return { price: priced };
     },
@@ -138,11 +138,13 @@ export function registerDeliveryRoutes(app: FastifyInstance, context: AppContext
     '/deliveries/totals',
     { preHandler: requireRole('office', 'job') },
     async (request) => ({
-      totals: context.deliveries.totals({
-        ...(request.query.from ? { from: dayKey(request.query.from) } : {}),
-        ...(request.query.to ? { to: dayKey(request.query.to) } : {}),
-        ...(request.query.truckId ? { truckId: request.query.truckId } : {}),
-      }),
+      totals: context.deliveries.totals(
+        defined({
+          from: optionalDay(request.query.from),
+          to: optionalDay(request.query.to),
+          truckId: optionalText(request.query.truckId),
+        }),
+      ),
     }),
   );
 }

@@ -2,6 +2,7 @@ import { AppContext, currentDay } from '../../service/context';
 import { FastifyInstance } from 'fastify';
 import { addDays, dayKey } from '../../util/dates';
 import { fahrenheit } from '../../core/units';
+import { defined, flag } from '../query-params';
 import { makeStation } from '../../model/station';
 import { normalsSchema, observationBatchSchema } from '../schema';
 import { parseOrThrow } from '../validate';
@@ -22,7 +23,7 @@ export function registerWeatherRoutes(app: FastifyInstance, context: AppContext)
     { preHandler: requireRole('office', 'job') },
     async (request) => ({
       stations: context.weather
-        .listStations(request.query.activeOnly === 'true' ? { activeOnly: true } : {})
+        .listStations(defined({ activeOnly: flag(request.query.activeOnly) }))
         .map((station) => ({
           ...station,
           observations: context.weather.countObservations(station.id),

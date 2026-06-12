@@ -7,6 +7,7 @@ import { Route } from '../../model/route';
 import { RoutingService } from '../../service/routing';
 import { commitPlanSchema, dispatchQuerySchema, settleStopSchema } from '../schema';
 import { dayKey } from '../../util/dates';
+import { defined, flag, optionalDay, optionalText } from '../query-params';
 import { parseOrThrow } from '../validate';
 import { requireRole } from '../auth';
 
@@ -103,11 +104,13 @@ export function registerDispatchRoutes(
     { preHandler: requireRole('office', 'driver', 'job') },
     async (request) => ({
       routes: context.routes
-        .list({
-          ...(request.query.runOn ? { runOn: dayKey(request.query.runOn) } : {}),
-          ...(request.query.truckId ? { truckId: request.query.truckId } : {}),
-          ...(request.query.openOnly === 'true' ? { openOnly: true } : {}),
-        })
+        .list(
+          defined({
+            runOn: optionalDay(request.query.runOn),
+            truckId: optionalText(request.query.truckId),
+            openOnly: flag(request.query.openOnly),
+          }),
+        )
         .map(presentRoute),
     }),
   );

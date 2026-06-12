@@ -4,6 +4,7 @@ import { FastifyInstance } from 'fastify';
 import { ReadingSource, makeReading } from '../../model/reading';
 import { createTankSchema, recordReadingSchema } from '../schema';
 import { dayKey } from '../../util/dates';
+import { defined, flag, optionalDay, optionalNumber, optionalText } from '../query-params';
 import { gallonsAt, roomToFill } from '../../core/tank-math';
 import { parseOrThrow } from '../validate';
 import { requireRole } from '../auth';
@@ -39,10 +40,12 @@ export function registerTankRoutes(app: FastifyInstance, context: AppContext): v
     '/tanks',
     { preHandler: requireRole('office', 'driver', 'job') },
     async (request) => {
-      const tanks = context.tanks.list({
-        ...(request.query.customerId ? { customerId: request.query.customerId } : {}),
-        ...(request.query.inServiceOnly === 'true' ? { inServiceOnly: true } : {}),
-      });
+      const tanks = context.tanks.list(
+        defined({
+          customerId: optionalText(request.query.customerId),
+          inServiceOnly: flag(request.query.inServiceOnly),
+        }),
+      );
       return { tanks: tanks.map(present) };
     },
   );
@@ -137,12 +140,14 @@ export function registerTankRoutes(app: FastifyInstance, context: AppContext): v
     async (request) => {
       context.tanks.get(request.params.id);
       return {
-        readings: context.readings.list({
-          tankId: request.params.id,
-          ...(request.query.from ? { from: dayKey(request.query.from) } : {}),
-          ...(request.query.to ? { to: dayKey(request.query.to) } : {}),
-          limit: request.query.limit ? Number(request.query.limit) : 60,
-        }),
+        readings: context.readings.list(
+          defined({
+            tankId: request.params.id,
+            from: optionalDay(request.query.from),
+            to: optionalDay(request.query.to),
+            limit: optionalNumber(request.query.limit) ?? 60,
+          }),
+        ),
       };
     },
   );
