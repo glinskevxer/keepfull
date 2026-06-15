@@ -17,6 +17,7 @@ function jobContext(scenario: Scenario, dryRun = false) {
 describe('the registry', () => {
   it('holds the nightly jobs and the yearly one', () => {
     expect(buildJobRegistry().names()).toEqual([
+      'cold-snap',
       'monitor-health',
       'nightly-forecast',
       'refresh-normals',
