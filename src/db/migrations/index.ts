@@ -5,6 +5,7 @@ import { migration as budgetPlans } from './0008-budget-plans';
 import { migration as deliveriesAndReadings } from './0003-deliveries-and-readings';
 import { migration as fleet } from './0004-fleet';
 import { migration as pricing } from './0006-pricing';
+import { migration as queryIndexes } from './0010-query-indexes';
 import { migration as routes } from './0005-routes';
 import { migration as truckLoads } from './0007-truck-loads';
 import { migration as weather } from './0002-weather';
@@ -20,4 +21,5 @@ export const MIGRATIONS: readonly Migration[] = [
   truckLoads,
   budgetPlans,
   audit,
+  queryIndexes,
 ];
