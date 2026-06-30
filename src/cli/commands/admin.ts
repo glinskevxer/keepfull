@@ -8,6 +8,7 @@ import { Column, emit, table } from '../output';
 import { addDays, dayKey } from '../../util/dates';
 import { describeSettings } from '../../config/env';
 import { backup, verify } from '../../db/backup';
+import { benchmark, renderTimings } from '../../dev/bench';
 import { seed } from '../../dev/seed';
 
 /**
@@ -143,6 +144,19 @@ export function registerAdminCommands(program: Command, deps: CliDeps): void {
       if (!result.ok) {
         process.exitCode = 1;
       }
+    });
+
+  admin
+    .command('bench')
+    .description('time the four things that get slower as the book grows')
+    .option('--runs <count>', 'how many times to run each', '3')
+    .action((options: { runs: string }) => {
+      const { context } = deps.runtime();
+      const timings = benchmark(context, {
+        runs: Number(options.runs),
+        yard: deps.settings().yard,
+      });
+      emit(deps.writer, globalOptionsOf(admin).format, timings, () => renderTimings(timings));
     });
 
   admin
