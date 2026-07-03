@@ -1,5 +1,6 @@
 import { AuditRepository } from '../db/repo/audit-repo';
 import { BudgetRepository } from '../db/repo/budget-repo';
+import { ContactRepository } from '../db/repo/contact-repo';
 import { CustomerRepository } from '../db/repo/customer-repo';
 import { DayKey, today } from '../util/dates';
 import { Db } from '../db/connection';
@@ -26,6 +27,7 @@ export interface AppContext {
   readonly db: Db;
   readonly audit: AuditRepository;
   readonly budgets: BudgetRepository;
+  readonly contacts: ContactRepository;
   readonly customers: CustomerRepository;
   readonly tanks: TankRepository;
   readonly deliveries: DeliveryRepository;
@@ -51,6 +53,7 @@ export function buildContext(db: Db, options: ContextOptions = {}): AppContext {
     db,
     audit: new AuditRepository(db),
     budgets: new BudgetRepository(db),
+    contacts: new ContactRepository(db),
     customers: new CustomerRepository(db),
     tanks: new TankRepository(db),
     deliveries: new DeliveryRepository(db),

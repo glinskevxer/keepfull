@@ -10,6 +10,7 @@ import { FastifyInstance } from 'fastify';
 import { createCustomerSchema, customerQuerySchema, updateCustomerSchema } from '../schema';
 import { dayKey } from '../../util/dates';
 import { parseOrThrow } from '../validate';
+import { makeContact } from '../../model/contact';
 import { requireRole } from '../auth';
 
 /**
@@ -143,6 +144,39 @@ export function registerCustomerRoutes(app: FastifyInstance, context: AppContext
       context.customers.update(merged);
       return { customer: present(merged) };
     },
+  );
+
+  app.get<{ Params: { id: string } }>(
+    '/customers/:id/contacts',
+    { preHandler: requireRole('office', 'driver', 'job') },
+    async (request) => {
+      context.customers.get(request.params.id);
+      return { contacts: context.contacts.forCustomer(request.params.id) };
+    },
+  );
+
+  app.post<{
+    Params: { id: string };
+    Body: { name: string; role: string; phone?: string; email?: string; notes?: string };
+  }>('/customers/:id/contacts', { preHandler: requireRole('office') }, async (request, reply) => {
+    context.customers.get(request.params.id);
+    const contact = makeContact({
+      id: context.ids.next('ct'),
+      customerId: request.params.id,
+      name: request.body.name,
+      role: request.body.role as never,
+      ...(request.body.phone ? { phone: request.body.phone } : {}),
+      ...(request.body.email ? { email: request.body.email } : {}),
+      ...(request.body.notes ? { notes: request.body.notes } : {}),
+    });
+    reply.code(201);
+    return { contact: context.contacts.assign(contact) };
+  });
+
+  app.post<{ Params: { id: string; contactId: string } }>(
+    '/customers/:id/contacts/:contactId/retire',
+    { preHandler: requireRole('office') },
+    async (request) => ({ contact: context.contacts.retire(request.params.contactId) }),
   );
 
   app.post<{ Params: { id: string }; Body: { on?: string } }>(
