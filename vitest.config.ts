@@ -10,12 +10,15 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text-summary', 'html', 'lcov'],
       include: ['src/**/*.ts'],
-      exclude: ['src/index.ts'],
+      // The two process entry points are argv parsing and signal handling
+      // around code that is covered on its own. Testing them means spawning a
+      // process, which buys a number rather than a guarantee.
+      exclude: ['src/index.ts', 'src/api/main.ts', 'src/cli/main.ts'],
       thresholds: {
-        lines: 85,
-        statements: 85,
-        functions: 85,
-        branches: 80,
+        lines: 92,
+        statements: 92,
+        functions: 92,
+        branches: 88,
       },
     },
   },
