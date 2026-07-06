@@ -94,6 +94,8 @@ jobs:
       - run: npm ci
       - name: export check
         run: npm run export-check
+      - name: release check
+        run: npm run release-check
 
   image:
     name: the container builds and comes up healthy

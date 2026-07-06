@@ -24,25 +24,26 @@
     "export-check": "bash scripts/export-check.sh",
     "audit": "npm audit --omit=dev --json > audit.json || true && tsx scripts/audit-dependencies.ts --from-audit audit.json",
     "commands": "tsx scripts/build-command-reference.ts",
-    "commands:check": "tsx scripts/build-command-reference.ts --check"
+    "commands:check": "tsx scripts/build-command-reference.ts --check",
+    "release-check": "tsx scripts/release-check.ts"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
+    "@types/better-sqlite3": "7.6.12",
     "@types/node": "20.17.19",
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/coverage-v8": "2.1.9",
     "eslint": "9.19.0",
     "eslint-config-prettier": "10.0.1",
     "prettier": "3.4.2",
-    "tsx": "^4.19.2",
+    "tsx": "4.19.2",
     "typescript": "5.7.3",
     "typescript-eslint": "8.22.0",
     "vitest": "2.1.9"
   },
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
-    "commander": "^13.1.0",
-    "fastify": "^5.2.1",
-    "zod": "^3.24.1"
+    "better-sqlite3": "11.8.1",
+    "commander": "13.1.0",
+    "fastify": "5.2.1",
+    "zod": "3.24.1"
   },
   "bin": {
     "keepfull": "dist/cli/main.js"

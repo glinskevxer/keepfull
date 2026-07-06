@@ -21,6 +21,9 @@ npx prettier --check "src/**/*.ts" "tests/**/*.ts"
 step 'the command reference matches the cli'
 npm run commands:check
 
+step 'release checks'
+npm run release-check
+
 step 'tests'
 npm test
 
