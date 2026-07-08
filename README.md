@@ -78,10 +78,17 @@ paid for that lesson once with a different tool.
 ## The nightly work
 
 ```
+0  3 * * *  keepfull jobs run weather-ingest
 30 3 * * *  keepfull jobs run nightly-forecast
+45 3 * * *  keepfull jobs run cold-snap
 0  5 * * *  keepfull jobs run monitor-health
 0  2 * * 0  keepfull jobs run retention
+0  4 1 7 *  keepfull jobs run refresh-normals
 ```
+
+`weather-ingest` reads whatever the nightly pull dropped in `WEATHER_SPOOL_DIR`,
+which is why it runs first. `refresh-normals` runs once, in July, because moving
+a normal in January moves every projected reserve date on the book overnight.
 
 `jobs run` exits non zero if anything inside the job failed, so the wrapper
 script does not have to read the output to know something wants looking at.

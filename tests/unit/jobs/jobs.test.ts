@@ -22,6 +22,7 @@ describe('the registry', () => {
       'nightly-forecast',
       'refresh-normals',
       'retention',
+      'weather-ingest',
     ]);
   });
 });
