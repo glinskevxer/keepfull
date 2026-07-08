@@ -4,6 +4,7 @@ import { Column, emit, gallons, table } from '../output';
 import { DispatchService } from '../../service/dispatch';
 import { RoutingService } from '../../service/routing';
 import { dayKey } from '../../util/dates';
+import { describeContact, siteContact } from '../../model/contact';
 
 /**
  * Dispatch from the terminal. `plan` is what the cron runs at four in the
@@ -108,6 +109,10 @@ export function registerDispatchCommands(program: Command, deps: CliDeps): void 
       const rows = route.stops.map((stop) => {
         const customer = context.customers.get(stop.customerId);
         const tank = context.tanks.get(stop.tankId);
+        // The site contact, not the billing one. A driver at a locked gate
+        // ringing the person who pays the bill four hundred miles away is the
+        // failure this column exists to stop.
+        const contact = siteContact(context.contacts.forCustomer(customer.id));
         return {
           position: stop.position,
           name: customer.serviceName,
@@ -115,6 +120,8 @@ export function registerDispatchCommands(program: Command, deps: CliDeps): void 
           tank: tank.serialNumber,
           gallons: stop.plannedGallons,
           outcome: stop.outcome,
+          contact: contact ? describeContact(contact) : '',
+          notes: [tank.notes, stop.note].filter((entry) => entry).join('; '),
         };
       });
       const columns: Column<(typeof rows)[number]>[] = [
@@ -124,6 +131,8 @@ export function registerDispatchCommands(program: Command, deps: CliDeps): void 
         { header: 'tank', get: (row) => row.tank },
         { header: 'gallons', get: (row) => gallons(row.gallons), align: 'right' },
         { header: 'outcome', get: (row) => row.outcome },
+        { header: 'ring', get: (row) => row.contact },
+        { header: 'notes', get: (row) => row.notes },
       ];
       emit(deps.writer, globalOptionsOf(dispatch).format, { route, rows }, () =>
         [
