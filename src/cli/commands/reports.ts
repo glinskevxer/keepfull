@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { CliDeps, globalOptionsOf } from '../program';
 import { Column, emit, gallons, table } from '../output';
+import { DriverDayService } from '../../service/driver-day';
 import { ReportService } from '../../service/reports';
 import { addDays, dayKey, heatingSeason } from '../../util/dates';
 import { currentDay } from '../../service/context';
@@ -90,6 +91,43 @@ export function registerReportCommands(program: Command, deps: CliDeps): void {
                 .map((entry) => `${entry.ticketNumber} ${gallons(entry.differenceGallons)}`)
                 .join(', ')}`,
         ].join('\n'),
+      );
+    });
+
+  reports
+    .command('driver-day')
+    .description('what each driver did on a day')
+    .option('--on <day>', 'the day')
+    .option('--driver <id>', 'only this driver')
+    .action((options: { on?: string; driver?: string }) => {
+      const { context } = deps.runtime();
+      const service = new DriverDayService(context);
+      const on = options.on ? dayKey(options.on) : currentDay(context);
+      const rows = options.driver ? [service.forDriver(options.driver, on)] : service.forDay(on);
+      const columns: Column<(typeof rows)[number]>[] = [
+        { header: 'driver', get: (row) => row.driverId },
+        { header: 'stops', get: (row) => `${row.delivered}/${row.stops}`, align: 'right' },
+        { header: 'missed', get: (row) => String(row.missed), align: 'right' },
+        { header: 'net gal', get: (row) => gallons(row.netGallons), align: 'right' },
+        {
+          header: 'per stop',
+          get: (row) => (row.gallonsPerStop === null ? '-' : gallons(row.gallonsPerStop)),
+          align: 'right',
+        },
+        {
+          header: 'fill rate',
+          get: (row) => (row.fillRate === null ? '-' : `${(row.fillRate * 100).toFixed(0)}%`),
+          align: 'right',
+        },
+        {
+          header: 'returned',
+          get: (row) => (row.returnedGallons === null ? 'open' : gallons(row.returnedGallons)),
+          align: 'right',
+        },
+        { header: 'flags', get: (row) => row.flags.join('; ') },
+      ];
+      emit(deps.writer, globalOptionsOf(reports).format, { on, rows }, () =>
+        [`${on}`, table(rows, columns)].join('\n'),
       );
     });
 

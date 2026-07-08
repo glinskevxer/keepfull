@@ -66,10 +66,16 @@ export class DriverDayService {
     );
     const plannedGallons = round(routes.reduce((total, route) => total + route.plannedGallons, 0));
     const plannedMiles = round(routes.reduce((total, route) => total + route.plannedMiles, 0));
-    const metered = loads.reduce<number | null>((total, load) => {
-      const out = meteredOut(load);
-      return out === undefined || total === null ? null : total + out;
-    }, 0);
+    // Null rather than zero when there is nothing to go on: no load recorded
+    // at all, or a shift still open. Zero would read as "the truck came back
+    // empty", which is a different and much more interesting statement.
+    const metered =
+      loads.length === 0
+        ? null
+        : loads.reduce<number | null>((total, load) => {
+            const out = meteredOut(load);
+            return out === undefined || total === null ? null : total + out;
+          }, 0);
     const loaded = round(loads.reduce((total, load) => total + load.plantGross, 0));
 
     const flags: string[] = [];

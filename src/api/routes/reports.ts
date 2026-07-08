@@ -1,5 +1,6 @@
 import { AppContext, currentDay } from '../../service/context';
 import { FastifyInstance } from 'fastify';
+import { DriverDayService } from '../../service/driver-day';
 import { ReportService } from '../../service/reports';
 import { addDays, dayKey, heatingSeason } from '../../util/dates';
 import { requireRole } from '../auth';
@@ -11,6 +12,7 @@ import { requireRole } from '../auth';
  */
 export function registerReportRoutes(app: FastifyInstance, context: AppContext): void {
   const reports = new ReportService(context);
+  const driverDays = new DriverDayService(context);
 
   const range = (query: { from?: string; to?: string }, defaultDays: number) => {
     const to = query.to ? dayKey(query.to) : currentDay(context);
@@ -60,6 +62,18 @@ export function registerReportRoutes(app: FastifyInstance, context: AppContext):
         to,
         ...reports.deliveryAccuracy(from, to, request.query.truckId),
       };
+    },
+  );
+
+  app.get<{ Querystring: { on?: string; driverId?: string } }>(
+    '/reports/driver-day',
+    { preHandler: requireRole('office', 'job') },
+    async (request) => {
+      const on = request.query.on ? dayKey(request.query.on) : currentDay(context);
+      const drivers = request.query.driverId
+        ? [driverDays.forDriver(request.query.driverId, on)]
+        : driverDays.forDay(on);
+      return { on, drivers };
     },
   );
 

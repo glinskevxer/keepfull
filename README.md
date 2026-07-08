@@ -161,6 +161,7 @@ gallons, seasons and how the trucks did
 | `reports gallons [options]` | gallons by month or by heating season |
 | `reports seasons [options] <stationId>` | gallons against degree days, season by season |
 | `reports meter-accuracy [options]` | how far the gauges and the meters disagree |
+| `reports driver-day [options]` | what each driver did on a day |
 | `reports routes [options]` | planned against delivered |
 
 ### `keepfull sizing`
