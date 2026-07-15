@@ -15,6 +15,7 @@ import { registerExceptionRoutes } from './routes/exceptions';
 import { registerFleetRoutes } from './routes/fleet';
 import { registerForecastRoutes } from './routes/forecasts';
 import { registerHealthRoutes } from './routes/health';
+import { registerIndexRoute } from './routes/index-route';
 import { registerMetricsRoutes } from './routes/metrics';
 import { registerLoadRoutes } from './routes/loads';
 import { registerOfficeRoutes } from './routes/office';
@@ -135,6 +136,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
 
   registerHealthRoutes(app, context);
   registerMetricsRoutes(app, context, registry);
+  registerIndexRoute(app);
   registerCustomerRoutes(app, context);
   registerTankRoutes(app, context);
   registerDeliveryRoutes(app, context);
