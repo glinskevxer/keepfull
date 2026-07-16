@@ -142,6 +142,7 @@ database and configuration housekeeping
 | command | what it does |
 | --- | --- |
 | `admin status [options]` | what this process is pointed at and what shape it is in |
+| `admin doctor [options]` | is this deployment actually going to work |
 | `admin migrations [options]` | what has been applied and what has not |
 | `admin seed [options]` | fill an empty database with a yard that behaves like the real one |
 | `admin backup [options] <path>` | take a copy through sqlite own backup, then open it and check it |

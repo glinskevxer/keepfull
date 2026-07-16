@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { CliDeps, globalOptionsOf } from '../program';
 import { ConflictError } from '../../core/errors';
+import { DoctorService } from '../../service/doctor';
 import { MIGRATIONS } from '../../db/migrations';
 import { appliedMigrations, currentVersion, pendingMigrations } from '../../db/migrate';
 import { compact, integrityCheck, tableNames } from '../../db/connection';
@@ -47,6 +48,27 @@ export function registerAdminCommands(program: Command, deps: CliDeps): void {
             `${payload.counts.deliveries} tickets, ${payload.counts.stations} stations`,
         ].join('\n'),
       );
+    });
+
+  admin
+    .command('doctor')
+    .description('is this deployment actually going to work')
+    .action(() => {
+      const { context } = deps.runtime();
+      const diagnosis = new DoctorService(context, deps.settings()).diagnose();
+      emit(deps.writer, globalOptionsOf(admin).format, diagnosis, () =>
+        diagnosis.findings.length === 0
+          ? 'nothing wrong with this installation'
+          : [
+              `${diagnosis.blocking} blocking, ${diagnosis.warnings} warnings`,
+              ...diagnosis.findings.map(
+                (finding) => `  [${finding.severity}] ${finding.check}: ${finding.detail}`,
+              ),
+            ].join('\n'),
+      );
+      if (!diagnosis.healthy) {
+        process.exitCode = 1;
+      }
     });
 
   admin
