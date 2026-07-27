@@ -6,6 +6,7 @@ import { ForecastingService } from './forecasting';
 import { Plan, buildPlan, isRunningShort, trueUp } from '../core/budget';
 import { PricingService } from './pricing';
 import { StoredPlan } from '../db/repo/budget-repo';
+import { round } from '../util/round';
 
 /**
  * Budget plans for real accounts.
@@ -192,8 +193,4 @@ function toCorePlan(stored: StoredPlan): Plan {
     monthlyAmount: stored.monthlyAmount,
     instalments: stored.instalments,
   };
-}
-
-function round(value: number): number {
-  return Math.round(value * 10) / 10;
 }

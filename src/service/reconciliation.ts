@@ -3,6 +3,7 @@ import { DayKey } from '../util/dates';
 import { NotFoundError } from '../core/errors';
 import { Reconciliation, ToleranceOptions, driftTrend, reconcile } from '../core/reconcile';
 import { TruckLoad, meteredOut } from '../model/truck-load';
+import { round } from '../util/round';
 
 /**
  * Ties the day's loads to the day's tickets.
@@ -86,9 +87,4 @@ export class ReconciliationService {
       suspect: trend.direction !== 'none',
     };
   }
-}
-
-function round(value: number, places = 1): number {
-  const factor = 10 ** places;
-  return Math.round(value * factor) / factor;
 }

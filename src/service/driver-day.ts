@@ -3,6 +3,7 @@ import { DayKey } from '../util/dates';
 import { DistanceMatrix, Point } from '../core/route/distance';
 import { NotFoundError } from '../core/errors';
 import { meteredOut } from '../model/truck-load';
+import { round } from '../util/round';
 
 /**
  * What one driver did in a day.
@@ -148,9 +149,4 @@ export class DriverDayService {
     const matrix = new DistanceMatrix(points);
     return round(matrix.tourLength(points.map((_point, index) => index)));
   }
-}
-
-function round(value: number, places = 1): number {
-  const factor = 10 ** places;
-  return Math.round(value * factor) / factor;
 }

@@ -6,6 +6,7 @@ import { addDays, dayKey } from '../../util/dates';
 import { forecastQuerySchema } from '../schema';
 import { parseOrThrow } from '../validate';
 import { requireRole } from '../auth';
+import { round } from '../../util/round';
 
 /**
  * Forecasts.
@@ -38,11 +39,6 @@ function present(result: TankForecast): Record<string, unknown> {
     lastActualWeatherDay: result.forecast.lastActualWeatherDay ?? null,
     horizonDays: result.forecast.horizonDays,
   };
-}
-
-function round(value: number, places: number): number {
-  const factor = 10 ** places;
-  return Math.round(value * factor) / factor;
 }
 
 export function registerForecastRoutes(app: FastifyInstance, context: AppContext): void {

@@ -3,6 +3,7 @@ import { DayKey, addDays, daysBetween, heatingSeason, heatingSeasonBounds } from
 import { Delivery } from '../model/delivery';
 import { NotFoundError } from '../core/errors';
 import { gaugeRise, impliedNetGallons } from '../model/delivery';
+import { round } from '../util/round';
 
 /**
  * The numbers somebody asks for at the end of a month.
@@ -228,9 +229,4 @@ function summarise(period: string, rows: readonly Delivery[]): GallonsByPeriod {
 
 function mean(values: readonly number[]): number {
   return values.length === 0 ? 0 : round(values.reduce((a, b) => a + b, 0) / values.length, 2);
-}
-
-function round(value: number, places = 1): number {
-  const factor = 10 ** places;
-  return Math.round(value * factor) / factor;
 }

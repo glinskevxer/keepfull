@@ -1,4 +1,5 @@
 import { assertNonNegative, assertPositive } from '../util/assert';
+import { round } from '../util/round';
 
 /**
  * Three numbers that should agree, and what it means when they do not.
@@ -137,9 +138,4 @@ export function driftTrend(
     return { run, direction: 'none', meanGap };
   }
   return { run, direction: sign > 0 ? 'lean' : 'rich', meanGap };
-}
-
-function round(value: number, places = 1): number {
-  const factor = 10 ** places;
-  return Math.round(value * factor) / factor;
 }

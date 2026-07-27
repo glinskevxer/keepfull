@@ -4,6 +4,7 @@ import { NotFoundError } from '../core/errors';
 import { Point, straightLineMiles } from '../core/route/distance';
 import { Station } from '../model/station';
 import { inTransaction } from '../db/connection';
+import { round } from '../util/round';
 
 /**
  * Which station's weather an account is forecast against.
@@ -57,9 +58,9 @@ function chooseFrom(
       const elevationDifference = Math.abs(station.elevationFeet - assumedElevation);
       return {
         stationId: station.id,
-        miles: round(miles),
+        miles: round(miles, 2),
         elevationDifference: round(elevationDifference, 0),
-        effectiveMiles: round(miles + (elevationDifference / 1000) * ELEVATION_PENALTY_MILES),
+        effectiveMiles: round(miles + (elevationDifference / 1000) * ELEVATION_PENALTY_MILES, 2),
       };
     })
     .sort((left, right) => left.effectiveMiles - right.effectiveMiles);
@@ -97,7 +98,7 @@ export class TerritoryService {
       if (!current || current.stationId === nearest.stationId) {
         continue;
       }
-      const milesSaved = round(current.effectiveMiles - nearest.effectiveMiles);
+      const milesSaved = round(current.effectiveMiles - nearest.effectiveMiles, 2);
       if (milesSaved < minimumMilesSaved) {
         continue;
       }
@@ -136,9 +137,4 @@ export class TerritoryService {
       active: station.active,
     }));
   }
-}
-
-function round(value: number, places = 2): number {
-  const factor = 10 ** places;
-  return Math.round(value * factor) / factor;
 }
