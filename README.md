@@ -97,6 +97,10 @@ script does not have to read the output to know something wants looking at.
 
 <!-- commands:start -->
 
+### `keepfull find`
+
+search accounts by name, account number, road or tank serial
+
 ### `keepfull tanks`
 
 look at tanks and their gauges

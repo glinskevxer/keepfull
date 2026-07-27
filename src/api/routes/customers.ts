@@ -77,6 +77,21 @@ export function registerCustomerRoutes(app: FastifyInstance, context: AppContext
     };
   });
 
+  app.get<{ Querystring: { q?: string; limit?: string } }>(
+    '/customers/search',
+    { preHandler: requireRole('office', 'driver', 'job') },
+    async (request) => {
+      const hits = context.customers.search(
+        request.query.q ?? '',
+        request.query.limit ? Number(request.query.limit) : 25,
+      );
+      return {
+        term: request.query.q ?? '',
+        hits: hits.map((hit) => ({ ...present(hit.customer), matchedOn: hit.matchedOn })),
+      };
+    },
+  );
+
   app.get<{ Params: { id: string } }>(
     '/customers/:id',
     { preHandler: requireRole('office', 'driver', 'job') },

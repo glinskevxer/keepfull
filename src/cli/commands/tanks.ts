@@ -6,6 +6,26 @@ import { gallonsAt, roomToFill } from '../../core/tank-math';
 
 /** Reading commands for tanks. Nothing here writes. */
 export function registerTankCommands(program: Command, deps: CliDeps): void {
+  program
+    .command('find <term>')
+    .description('search accounts by name, account number, road or tank serial')
+    .option('--limit <count>', 'how many to show', '25')
+    .action(function (this: Command, term: string, options: { limit: string }) {
+      const { context } = deps.runtime();
+      const hits = context.customers.search(term, Number(options.limit));
+      const columns: Column<(typeof hits)[number]>[] = [
+        { header: 'account', get: (row) => row.customer.accountNumber },
+        { header: 'name', get: (row) => row.customer.serviceName },
+        {
+          header: 'address',
+          get: (row) => `${row.customer.address.line1}, ${row.customer.address.town}`,
+        },
+        { header: 'mode', get: (row) => row.customer.deliveryMode },
+        { header: 'matched', get: (row) => row.matchedOn },
+      ];
+      emit(deps.writer, globalOptionsOf(this).format, hits, () => table(hits, columns));
+    });
+
   const tanks = program.command('tanks').description('look at tanks and their gauges');
 
   tanks

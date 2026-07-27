@@ -48,6 +48,12 @@ export function rowToCustomer(row: CustomerRow): Customer {
   });
 }
 
+export interface CustomerSearchHit {
+  readonly customer: Customer;
+  /** Which field the search matched on, for the screen to show. */
+  readonly matchedOn: 'account' | 'name' | 'address' | 'tank';
+}
+
 export interface CustomerQuery {
   readonly deliveryMode?: DeliveryMode;
   readonly rateClass?: RateClass;
@@ -164,6 +170,52 @@ export class CustomerRepository {
       >(`SELECT count(*) AS n FROM customers ${where.sql}`)
       .get(where.bind());
     return row?.n ?? 0;
+  }
+
+  /**
+   * The search box. One field, because the office types whatever they have:
+   * part of a name, an account number with or without its dash, a road, or the
+   * serial off the tank in front of them. Ordered so an exact account number
+   * comes first, since that is the one case where the person already knows
+   * exactly which account they want.
+   */
+  search(term: string, limit = 25): CustomerSearchHit[] {
+    // The wildcards go before the length check, not after. Searching for `%%`
+    // otherwise cleaned down to nothing and then matched the entire book.
+    const trimmed = term.trim().replace(/[%_]/g, '');
+    if (trimmed.length < 2) {
+      return [];
+    }
+    const like = `%${trimmed}%`;
+    const digits = trimmed.replace(/\D/g, '');
+    const account = digits.length >= 6 ? `%${digits.slice(0, 2)}-${digits.slice(2)}%` : like;
+    const rows = this.db
+      .prepare<Record<string, unknown>, CustomerRow & { matched_on: string }>(
+        `SELECT c.*, CASE
+             WHEN c.account_number LIKE @account THEN 'account'
+             WHEN c.billing_name LIKE @like OR c.service_name LIKE @like THEN 'name'
+             WHEN c.address_line1 LIKE @like OR c.town LIKE @like THEN 'address'
+             ELSE 'tank'
+           END AS matched_on
+           FROM customers c
+          WHERE c.account_number LIKE @account
+             OR c.billing_name LIKE @like
+             OR c.service_name LIKE @like
+             OR c.address_line1 LIKE @like
+             OR c.town LIKE @like
+             OR EXISTS (SELECT 1 FROM tanks t WHERE t.customer_id = c.id AND t.serial_number LIKE @like)
+          ORDER BY CASE
+             WHEN c.account_number LIKE @account THEN 0
+             WHEN c.billing_name LIKE @like OR c.service_name LIKE @like THEN 1
+             ELSE 2
+           END, c.account_number
+          LIMIT @limit`,
+      )
+      .all({ like, account, limit });
+    return rows.map((row) => ({
+      customer: rowToCustomer(row),
+      matchedOn: row.matched_on as CustomerSearchHit['matchedOn'],
+    }));
   }
 
   /** Puts an account on hold, or lifts the hold when the reason is empty. */
