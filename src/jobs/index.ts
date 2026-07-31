@@ -1,4 +1,5 @@
 import { JobRegistry } from './runner';
+import { auditRetention } from './audit-retention';
 import { coldSnap } from './cold-snap';
 import { monitorHealth } from './monitor-health';
 import { nightlyForecast } from './nightly-forecast';
@@ -14,7 +15,16 @@ export function buildJobRegistry(): JobRegistry {
     .register(monitorHealth)
     .register(retention)
     .register(refreshNormals)
-    .register(coldSnap);
+    .register(coldSnap)
+    .register(auditRetention);
 }
 
-export { coldSnap, monitorHealth, nightlyForecast, refreshNormals, retention, weatherIngest };
+export {
+  auditRetention,
+  coldSnap,
+  monitorHealth,
+  nightlyForecast,
+  refreshNormals,
+  retention,
+  weatherIngest,
+};

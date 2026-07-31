@@ -152,4 +152,22 @@ export class AuditRepository {
   count(query: AuditQuery = {}): number {
     return this.list({ ...query, limit: -1 }).length;
   }
+
+  /**
+   * The only thing in here that removes a row, and it is deliberately awkward
+   * to reach: it takes an explicit cutoff, it refuses anything inside the
+   * statutory floor, and it says how many it took. An audit trail that can be
+   * trimmed casually is not one.
+   */
+  purgeBefore(day: DayKey, floorDays: number): number {
+    const floor = new Date();
+    floor.setUTCDate(floor.getUTCDate() - floorDays);
+    const earliestAllowed = floor.toISOString().slice(0, 10);
+    if (day > earliestAllowed) {
+      throw new Error(
+        `audit entries are kept for ${floorDays} days, so nothing before ${day} may go yet`,
+      );
+    }
+    return this.db.prepare('DELETE FROM audit_entries WHERE at < ?').run(day).changes;
+  }
 }
