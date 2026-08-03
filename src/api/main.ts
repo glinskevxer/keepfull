@@ -23,6 +23,7 @@ export async function main(): Promise<void> {
     context: runtime.context,
     keyRing: settings.keyRing,
     yard: settings.yard,
+    settings,
     requestLogging: settings.requestLogging,
     ...(settings.requestsPerMinute === undefined
       ? {}

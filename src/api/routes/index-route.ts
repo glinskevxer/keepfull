@@ -20,7 +20,7 @@ export interface RouteSummary {
   readonly open: boolean;
 }
 
-const OPEN = new Set(['/', '/health', '/ready', '/metrics']);
+const OPEN = new Set(['/', '/health', '/ready', '/metrics', '/diagnose']);
 
 /**
  * Fastify keeps the handlers but not the role list, so the roles are read back

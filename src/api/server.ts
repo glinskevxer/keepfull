@@ -4,6 +4,7 @@ import { bodyFor, statusFor } from './errors';
 import { KeyRing, authenticate } from './auth';
 import { RateLimiter, rateLimit } from './rate-limit';
 import { Registry, buildRegistry } from '../util/metrics';
+import { Settings } from '../config/env';
 import { requestId } from './request-id';
 import { describeError } from '../core/errors';
 import { registerAuditRoutes } from './routes/audit';
@@ -43,6 +44,8 @@ export interface ServerOptions {
   readonly requestsPerMinute?: number;
   /** Somewhere to put the counters. One is built if none is given. */
   readonly registry?: Registry;
+  /** Passed to the diagnose endpoint so it can check the yard coordinates. */
+  readonly settings?: Settings;
   /** Turns fastify's own logging on. Off by default because we log our own. */
   readonly requestLogging?: boolean;
   readonly bodyLimitBytes?: number;
@@ -134,7 +137,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
       );
   });
 
-  registerHealthRoutes(app, context);
+  registerHealthRoutes(app, context, options.settings);
   registerMetricsRoutes(app, context, registry);
   registerIndexRoute(app);
   registerCustomerRoutes(app, context);

@@ -31,7 +31,7 @@ describe('GET /', () => {
   it('says which paths need no key', async () => {
     const { app } = setup();
     const response = await call<{ open: string[] }>(app, 'GET', '/');
-    expect(response.body.open).toEqual(['/', '/health', '/metrics', '/ready']);
+    expect(response.body.open).toEqual(['/', '/diagnose', '/health', '/metrics', '/ready']);
   });
 
   it('lists the roles a key can have', async () => {

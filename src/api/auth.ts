@@ -94,7 +94,7 @@ export function readKey(request: FastifyRequest): string | undefined {
  * scraper. Every monitoring setup here that has carried a credential has
  * eventually had it expire quietly and the alerting go dark with it.
  */
-const OPEN_PATHS = new Set(['/', '/health', '/ready', '/metrics']);
+const OPEN_PATHS = new Set(['/', '/health', '/ready', '/metrics', '/diagnose']);
 
 export function authenticate(keyRing: KeyRing) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
