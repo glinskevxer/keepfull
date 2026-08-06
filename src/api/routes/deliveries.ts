@@ -6,6 +6,7 @@ import { PricingService } from '../../service/pricing';
 import { defined, flag, optionalDay, optionalNumber, optionalText } from '../query-params';
 import { parseOrThrow } from '../validate';
 import { postDeliverySchema } from '../schema';
+import { callerOf } from '../caller';
 import { requireRole } from '../auth';
 
 /**
@@ -126,11 +127,7 @@ export function registerDeliveryRoutes(app: FastifyInstance, context: AppContext
     { preHandler: requireRole('office') },
     async (request) => {
       const note = request.body?.note ?? 'voided from the office';
-      const who = {
-        actor: request.caller?.name ?? 'unknown',
-        ...(request.requestId ? { requestId: request.requestId } : {}),
-      };
-      return { delivery: present(deliveries.void(request.params.id, note, who)) };
+      return { delivery: present(deliveries.void(request.params.id, note, callerOf(request))) };
     },
   );
 

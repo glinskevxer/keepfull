@@ -8,6 +8,7 @@ import { makeSchedule } from '../../core/pricing';
 import { mills } from '../../util/money';
 import { parseOrThrow } from '../validate';
 import { priceQuerySchema } from '../schema';
+import { callerOf } from '../caller';
 import { requireRole } from '../auth';
 
 /**
@@ -131,10 +132,7 @@ export function registerOfficeRoutes(app: FastifyInstance, context: AppContext):
         ...(body.rateClasses ? { rateClasses: body.rateClasses as never } : {}),
         ...(body.note ? { note: body.note } : {}),
       },
-      {
-        actor: request.caller?.name ?? 'unknown',
-        ...(request.requestId ? { requestId: request.requestId } : {}),
-      },
+      callerOf(request),
     );
     reply.code(201);
     return result;

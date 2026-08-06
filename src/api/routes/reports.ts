@@ -2,7 +2,8 @@ import { AppContext, currentDay } from '../../service/context';
 import { FastifyInstance } from 'fastify';
 import { DriverDayService } from '../../service/driver-day';
 import { ReportService } from '../../service/reports';
-import { addDays, dayKey, heatingSeason } from '../../util/dates';
+import { dayKey, heatingSeason } from '../../util/dates';
+import { rangeFrom } from '../caller';
 import { requireRole } from '../auth';
 
 /**
@@ -14,17 +15,11 @@ export function registerReportRoutes(app: FastifyInstance, context: AppContext):
   const reports = new ReportService(context);
   const driverDays = new DriverDayService(context);
 
-  const range = (query: { from?: string; to?: string }, defaultDays: number) => {
-    const to = query.to ? dayKey(query.to) : currentDay(context);
-    const from = query.from ? dayKey(query.from) : addDays(to, -defaultDays);
-    return { from, to };
-  };
-
   app.get<{ Querystring: { from?: string; to?: string; by?: string } }>(
     '/reports/gallons',
     { preHandler: requireRole('office', 'job') },
     async (request) => {
-      const { from, to } = range(request.query, 365);
+      const { from, to } = rangeFrom(context, request.query, 365);
       const by = request.query.by === 'season' ? 'season' : 'month';
       return {
         from,
@@ -56,7 +51,7 @@ export function registerReportRoutes(app: FastifyInstance, context: AppContext):
     '/reports/meter-accuracy',
     { preHandler: requireRole('office', 'job') },
     async (request) => {
-      const { from, to } = range(request.query, 90);
+      const { from, to } = rangeFrom(context, request.query, 90);
       return {
         from,
         to,
@@ -81,7 +76,7 @@ export function registerReportRoutes(app: FastifyInstance, context: AppContext):
     '/reports/routes',
     { preHandler: requireRole('office', 'job') },
     async (request) => {
-      const { from, to } = range(request.query, 30);
+      const { from, to } = rangeFrom(context, request.query, 30);
       return { from, to, ...reports.routeEfficiency(from, to) };
     },
   );
