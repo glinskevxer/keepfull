@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { ROLES, Role } from '../auth';
+import { buildInfo } from '../../version';
 
 /**
  * What this api has.
@@ -57,8 +58,13 @@ export function summariseRoutes(app: FastifyInstance): RouteSummary[] {
 export function registerIndexRoute(app: FastifyInstance): void {
   app.get('/', async () => {
     const routes = summariseRoutes(app);
+    const build = buildInfo();
     return {
-      service: 'keepfull',
+      service: build.name,
+      version: build.version,
+      commit: build.commit,
+      builtAt: build.builtAt,
+      node: build.node,
       description: 'delivery forecasting and dispatch for a bulk propane dealer',
       roles: ROLES,
       open: [...OPEN].sort(),

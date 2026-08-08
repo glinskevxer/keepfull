@@ -27,6 +27,11 @@ RUN npm ci --omit=dev --no-audit --no-fund
 FROM node:20.18.1-bookworm-slim AS runtime
 WORKDIR /app
 
+# Set by the build so a running container can say what it is.
+ARG GIT_COMMIT=""
+ARG BUILT_AT=""
+ENV GIT_COMMIT=$GIT_COMMIT BUILT_AT=$BUILT_AT
+
 ENV NODE_ENV=production \
     DATABASE_PATH=/var/lib/keepfull/keepfull.db \
     HOST=0.0.0.0 \

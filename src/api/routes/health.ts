@@ -4,6 +4,7 @@ import { Settings } from '../../config/env';
 import { FastifyInstance } from 'fastify';
 import { MIGRATIONS } from '../../db/migrations';
 import { currentVersion, isUpToDate } from '../../db/migrate';
+import { buildInfo } from '../../version';
 import { integrityCheck } from '../../db/connection';
 
 /**
@@ -27,6 +28,8 @@ export function registerHealthRoutes(
     reply.code(ready ? 200 : 503);
     return {
       status: ready ? 'ready' : 'not ready',
+      version: buildInfo().version,
+      commit: buildInfo().commit,
       schemaVersion: schema,
       migrationsPending: MIGRATIONS.length - schema,
       integrity,

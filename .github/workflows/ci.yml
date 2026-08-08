@@ -104,7 +104,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: build the image
-        run: docker build -t keepfull:ci .
+        run: |
+          docker build \
+            --build-arg GIT_COMMIT="${GITHUB_SHA}" \
+            --build-arg BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -t keepfull:ci .
       - name: start it
         run: |
           docker run -d --name keepfull-ci -p 8080:8080 \
@@ -125,6 +129,9 @@ jobs:
           exit 1
       - name: the health probe inside the container agrees
         run: docker exec keepfull-ci node dist/health-probe.js
+      - name: it knows what it is running
+        run: |
+          curl -fsS http://127.0.0.1:8080/ | tee /dev/stderr | grep -q '"commit":"'
       - name: stop it
         if: always()
         run: docker rm -f keepfull-ci || true

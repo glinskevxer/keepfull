@@ -1,6 +1,7 @@
 import { boot } from '../bootstrap';
 import { buildServer } from './server';
 import { describeError } from '../core/errors';
+import { buildInfo } from '../version';
 import { describeSettings, loadSettings } from '../config/env';
 
 /**
@@ -17,7 +18,7 @@ const SHUTDOWN_GRACE_MS = 10_000;
 export async function main(): Promise<void> {
   const settings = loadSettings();
   const runtime = boot(settings);
-  runtime.logger.info('starting up', describeSettings(settings));
+  runtime.logger.info('starting up', { ...describeSettings(settings), build: buildInfo() });
 
   const app = buildServer({
     context: runtime.context,
