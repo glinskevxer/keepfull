@@ -25,6 +25,19 @@ station, because the ridge and the lake shore differ by several hundred degree
 days across a winter. And a forecast always reports how it got there, because a
 bare reserve date gets trusted far more than it deserves.
 
+## What it does
+
+| area | what is in it |
+| --- | --- |
+| forecasting | a two term burn model per tank, fitted off anchored fills and that tank's own station weather |
+| dispatch | urgency first packing onto the trucks, sequenced nearest neighbour then two opt |
+| tickets | posting, temperature correction to sixty degrees, overfill refusal, flagging |
+| money | tiered price schedules, locks, levelised budget plans with a true up |
+| reconciliation | plant meter against truck meter against tickets, and which pair disagrees |
+| compliance | leak checks, meter seals, interruptions of service |
+| sizing | whether a tank can vaporize fast enough for what is hanging off it |
+| operations | one morning board, a metrics scrape, an audit trail and a deploy check |
+
 ## Running it
 
 ```
@@ -241,6 +254,27 @@ the posted price and moving it
 | `prices cut [options] <amount>` | take an amount off every tier |
 
 <!-- commands:end -->
+
+## Operating it
+
+| endpoint | what it is for | key |
+| --- | --- | --- |
+| `GET /` | what is running, and every route it has | none |
+| `GET /health` | is the process up, for the balancer | none |
+| `GET /ready` | can it serve, which means it can reach its database | none |
+| `GET /diagnose` | will this deployment work, run it after a deploy or a restore | none |
+| `GET /metrics` | the scrape | none |
+| `GET /exceptions` | the morning board, worst first | office |
+
+Everything else needs a key. Keys are `name:role:key` triples in `API_KEYS`,
+and the roles are `office`, `driver`, `monitor`, `job` and `admin`.
+
+```
+keepfull admin doctor          # is this installation going to work
+keepfull admin backup /var/backups/keepfull-$(date +%F).db
+keepfull exceptions --today    # what has to be dealt with now
+keepfull find "bell hollow"    # the search box
+```
 
 ## Development
 
