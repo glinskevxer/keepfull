@@ -276,6 +276,16 @@ keepfull exceptions --today    # what has to be dealt with now
 keepfull find "bell hollow"    # the search box
 ```
 
+## Dependency advisories
+
+Everything is pinned exactly, so an advisory against a pinned version does not
+fix itself and unpinning on a Friday because a scanner went red is how the real
+outage happens. Advisories against what ships are read, judged against how this
+system is actually deployed, and recorded in `security-advisories.json` with a
+reason and a review date. The audit gate fails on anything unread, and fails
+again once a review date has passed, so an acceptance cannot quietly become a
+shrug.
+
 ## Development
 
 ```

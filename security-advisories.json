@@ -1,0 +1,41 @@
+{
+  "$comment": "Advisories that have been read, judged against how this system is actually deployed, and accepted until the review date. An entry here is a decision somebody made, not a way to make the build quiet: the audit gate fails once reviewBy has passed, so an acceptance cannot rot.",
+  "accepted": [
+    {
+      "id": "GHSA-mg2h-6x62-wpwc",
+      "package": "fastify",
+      "severity": "high",
+      "title": "invalid content-type parsing could lead to validation bypass",
+      "acceptedOn": "2026-08-28",
+      "reviewBy": "2026-11-30",
+      "why": "Reaches a body that has already passed an api key check, and every body on this server is parsed again by a zod schema that ignores the content type entirely. The bypass is of fastify's own schema validation, which this server does not use."
+    },
+    {
+      "id": "GHSA-jx2c-rxcm-jvmq",
+      "package": "fastify",
+      "severity": "high",
+      "title": "content-type header tab character allows body validation bypass",
+      "acceptedOn": "2026-08-28",
+      "reviewBy": "2026-11-30",
+      "why": "Same shape as GHSA-mg2h-6x62-wpwc and the same reasoning: validation here is zod at the handler, not a fastify body schema."
+    },
+    {
+      "id": "GHSA-mrq3-vjjr-p77c",
+      "package": "fastify",
+      "severity": "high",
+      "title": "denial of service via unbounded memory allocation in sendWebStream",
+      "acceptedOn": "2026-08-28",
+      "reviewBy": "2026-11-30",
+      "why": "No handler in this server returns a web stream. Every response is a plain object or the metrics text, so the affected path is not reachable."
+    },
+    {
+      "id": "GHSA-444r-cwp2-x5xf",
+      "package": "fastify",
+      "severity": "high",
+      "title": "request.protocol and request.host spoofable via X-Forwarded-Proto and X-Forwarded-Host",
+      "acceptedOn": "2026-08-28",
+      "reviewBy": "2026-11-30",
+      "why": "trustProxy is off, so fastify does not read those headers at all, and nothing in this codebase reads request.protocol or request.host. The server is on the yard network behind a key rather than on the public internet."
+    }
+  ]
+}
